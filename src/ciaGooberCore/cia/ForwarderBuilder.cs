@@ -21,6 +21,7 @@ public static class ForwarderBuilder
             GameSystem.Gba => GbaRom.Read(job.RomPath),
             GameSystem.Gb => GbRom.Read(job.RomPath),
             GameSystem.Nes => NesRom.Read(job.RomPath),
+            GameSystem.Snes => SnesRom.Read(job.RomPath),
             _ => throw new ArgumentOutOfRangeException(nameof(job), job.System, null),
         };
         var key = ds ? SdPath.Canonical(job.SdRomPath
@@ -57,8 +58,8 @@ public static class ForwarderBuilder
             {
                 GameSystem.Nds => BuildDsCiaAsync(job, rom, entry, folder, ct),
                 GameSystem.Gba => BuildGbaCiaAsync(job, rom, entry, folder, log, ct),
-                GameSystem.Gb or GameSystem.Nes => BuildVcCiaAsync(job, rom, entry, folder, log,
-                    ct),
+                GameSystem.Gb or GameSystem.Nes or GameSystem.Snes => BuildVcCiaAsync(job, rom,
+                    entry, folder, log, ct),
                 _ => throw new ArgumentOutOfRangeException(nameof(job), job.System, null),
             }).ConfigureAwait(false);
             var built = Path.Combine(folder, "build.cia");
@@ -84,7 +85,7 @@ public static class ForwarderBuilder
             DeleteJobFolder(folder);
     }
 
-    // Card icon image, else the DS ROM icon, else (GBA, GB, NES) the banner image
+    // Card icon image, else the DS ROM icon, else (the other systems) the banner image
     // (generator.py:195-212, 790-795).
     private static byte[] RenderIcon(BuildJob job)
     {
@@ -93,7 +94,7 @@ public static class ForwarderBuilder
         var art = job.Icon.Source is null ? job.Banner : job.Icon;
         if (art.Source is null)
             throw new InvalidOperationException(
-                "GBA, Game Boy and NES ROMs have no icon: choose a banner or icon image.");
+                "Only DS ROMs have an icon: choose a banner or icon image.");
         return ArtImages.RenderIcon(art.Source, art.Crop, job.IconBackground);
     }
 
@@ -120,13 +121,14 @@ public static class ForwarderBuilder
     }
 
     // Bundled per-system banner sound.
-    public static string DefaultSoundPath(GameSystem system) => Path.Combine(AppPaths.Tools,
+    public static string DefaultSoundPath(GameSystem system) => Path.Combine(AppPaths.Sounds,
         system switch
         {
-            GameSystem.Nds => "dsboot.ogg",
-            GameSystem.Gba => "gbaboot.ogg",
-            GameSystem.Gb => "gbcboot.ogg",
-            GameSystem.Nes => "nesboot.ogg",
+            GameSystem.Nds => "dsBoot.ogg",
+            GameSystem.Gba => "gbaBoot.ogg",
+            GameSystem.Gb => "gbcBoot.ogg",
+            GameSystem.Nes => "nesBoot.ogg",
+            GameSystem.Snes => "snesBoot.ogg",
             _ => throw new ArgumentOutOfRangeException(nameof(system), system, null),
         });
 
@@ -135,7 +137,8 @@ public static class ForwarderBuilder
         string folder, IProgress<string> log, CancellationToken ct)
     {
         var ds = job.System == GameSystem.Nds;
-        // A GBA, GB or NES card without a banner uses its icon choice (generator.py:830).
+        // A card of another system than DS without a banner uses its icon choice
+        // (generator.py:830).
         var banner = ds || job.Banner.Source is not null ? job.Banner : job.Icon;
         var bannerSource = banner.Source;
         if (bannerSource is null)
@@ -185,7 +188,7 @@ public static class ForwarderBuilder
         await WrapCxiAsync(cxi, folder, ct).ConfigureAwait(false);
     }
 
-    // GB, GBC and NES: Nintendo's VC emulator from the system's imported donor.
+    // GB, GBC, NES and SNES: Nintendo's VC emulator from the system's imported donor.
     private static async Task BuildVcCiaAsync(BuildJob job, RomInfo rom, RegistryEntry entry,
         string folder, IProgress<string> log, CancellationToken ct)
     {
@@ -194,7 +197,7 @@ public static class ForwarderBuilder
         var cxi = VcForwarderBuilder.BuildCxi(job.System, job.RomPath,
             File.ReadAllBytes(Path.Combine(folder, "banner.bin")),
             File.ReadAllBytes(Path.Combine(folder, "output.smdh")), template, entry.UniqueId,
-            rom.GameCode, log);
+            rom.GameCode, job.SnesPreset, log);
         await WrapCxiAsync(cxi, folder, ct).ConfigureAwait(false);
     }
 

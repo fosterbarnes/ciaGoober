@@ -460,7 +460,7 @@
                         <TextBlock Grid.Row="1"
                                    Style="{StaticResource LabelStyle}"
                                    Text="ROM"
-                                   ToolTip="DS forwarders launch the ROM from the SD path: a matching ROM already on the card is used under any name, otherwise Build offers to copy it to the 3DS SD Card ROM Folder. GBA, Game Boy and NES ROMs are built into the CIA." />
+                                   ToolTip="DS forwarders launch the ROM from the SD path: a matching ROM already on the card is used under any name, otherwise Build offers to copy it to the 3DS SD Card ROM Folder. GBA, Game Boy, NES and SNES ROMs are built into the CIA." />
                         <StackPanel Grid.Row="1" Grid.Column="1">
                             <TextBox IsReadOnly="True"
                                      Text="{Binding RomPath, Mode=OneWay}"
@@ -539,6 +539,40 @@
                                   ItemsSource="{x:Static core:GbaChoices.Ghosting}"
                                   SelectedValue="{Binding Ghosting}"
                                   AutomationProperties.Name="LCD ghosting" />
+                    </Grid>
+                </Border>
+
+                <!-- SNES options -->
+                <Border Margin="0,12,0,0"
+                        Style="{StaticResource ContentPanelStyle}"
+                        Visibility="{Binding IsSnes, Converter={StaticResource VisibleWhenTrue}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="130" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}"
+                                   Text="Expansion chip"
+                                   ToolTip="Coprocessor on the cartridge, read from the ROM header. DSP-1, DSP-2 and Cx4 games build with that chip's preset from Settings." />
+                        <TextBlock Grid.Column="1"
+                                   Margin="0,0,0,10"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding SnesChipText, Mode=OneWay}" />
+                        <TextBlock Grid.Row="1"
+                                   Style="{StaticResource LabelStyle}"
+                                   Text="Preset ID"
+                                   ToolTip="Emulator preset that sets the expansion chip and game fixes, in hex (e.g. 1011). Empty = Auto: 0000 for games without a chip, else the chip's preset from Settings." />
+                        <TextBox Grid.Row="1"
+                                 Grid.Column="1"
+                                 MaxLength="6"
+                                 FontFamily="Consolas"
+                                 Text="{Binding SnesPreset, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Hex preset ID; leave empty for Auto"
+                                 AutomationProperties.Name="Preset ID" />
                     </Grid>
                 </Border>
             </StackPanel>

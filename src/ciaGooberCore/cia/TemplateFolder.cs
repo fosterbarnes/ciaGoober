@@ -1,6 +1,6 @@
 namespace CiaGoober.Core;
 
-// Template folders in app data (GBA, GB/GBC, NES), replaced as a whole.
+// Template folders in app data (GBA, GB/GBC, NES, SNES), replaced as a whole.
 internal static class TemplateFolder
 {
     // Written to a sibling folder first so a failed write never looks installed.

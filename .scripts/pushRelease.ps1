@@ -42,5 +42,5 @@ if ($DryRun) {
 runNativeCommand git @('tag', '-f', $releaseTag) 'git tag'
 runNativeCommand git @('push', 'origin', "refs/tags/$releaseTag", '--force') 'git push tag'
 runNativeCommand gh ($releaseArgs + $assetArgs) 'gh release create'
-openUrl $releaseUrl
+if (-not $env:BASE_BUILD_PIPELINE) { openUrl $releaseUrl }
 closeOut 0

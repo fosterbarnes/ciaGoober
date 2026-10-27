@@ -94,7 +94,7 @@
                     </Grid>
 
                     <Grid Style="{StaticResource RowStyle}"
-                          ToolTip="DS ROMs only: folder on the SD card that Build copies missing DS ROMs to, and where a DS ROM is expected when no card is inserted. DS ROMs already on the card are found in any folder under any name. GBA, GB/GBC and NES ROMs are built into their CIA.">
+                          ToolTip="DS ROMs only: folder on the SD card that Build copies missing DS ROMs to, and where a DS ROM is expected when no card is inserted. DS ROMs already on the card are found in any folder under any name. GBA, GB/GBC, NES and SNES ROMs are built into their CIA.">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -250,7 +250,8 @@
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
-                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="State" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Action" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Style="{StaticResource LabelStyle}" Text="GBA template" />
@@ -259,14 +260,13 @@
                                    VerticalAlignment="Center"
                                    Text="{Binding GbaTemplateState}" />
                         <Button Grid.Column="2"
-                                HorizontalAlignment="Left"
                                 Style="{StaticResource AutoNeutralButtonStyle}"
                                 Content="Import GBA Donor CIA"
                                 Command="{Binding ImportGbaDonorCommand}"
                                 ToolTip="Extract the GBA template from a decrypted GBA Virtual Console .cia, .cxi or .app" />
                         <TextBlock Grid.Row="1"
                                    Grid.Column="1"
-                                   Grid.ColumnSpan="2"
+                                   Grid.ColumnSpan="3"
                                    Style="{StaticResource MessageStyle}"
                                    Text="{Binding GbaTemplateMessage}" />
                     </Grid>
@@ -279,7 +279,8 @@
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
-                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="State" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Action" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Style="{StaticResource LabelStyle}" Text="GB/GBC template" />
@@ -288,14 +289,13 @@
                                    VerticalAlignment="Center"
                                    Text="{Binding GbTemplateState}" />
                         <Button Grid.Column="2"
-                                HorizontalAlignment="Left"
                                 Style="{StaticResource AutoNeutralButtonStyle}"
                                 Content="Import GB/GBC Donor CIA"
                                 Command="{Binding ImportGbDonorCommand}"
                                 ToolTip="Extract the GB/GBC template from a decrypted Game Boy Color Virtual Console .cia, .cxi or .app" />
                         <TextBlock Grid.Row="1"
                                    Grid.Column="1"
-                                   Grid.ColumnSpan="2"
+                                   Grid.ColumnSpan="3"
                                    Style="{StaticResource MessageStyle}"
                                    Text="{Binding GbTemplateMessage}" />
                     </Grid>
@@ -308,7 +308,8 @@
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
-                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="State" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Action" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Style="{StaticResource LabelStyle}" Text="NES template" />
@@ -317,20 +318,85 @@
                                    VerticalAlignment="Center"
                                    Text="{Binding NesTemplateState}" />
                         <Button Grid.Column="2"
-                                HorizontalAlignment="Left"
                                 Style="{StaticResource AutoNeutralButtonStyle}"
                                 Content="Import NES Donor CIA"
                                 Command="{Binding ImportNesDonorCommand}"
                                 ToolTip="Extract the NES template from a decrypted NES Virtual Console .cia, .cxi or .app" />
                         <TextBlock Grid.Row="1"
                                    Grid.Column="1"
-                                   Grid.ColumnSpan="2"
+                                   Grid.ColumnSpan="3"
                                    Style="{StaticResource MessageStyle}"
                                    Text="{Binding NesTemplateMessage}" />
                     </Grid>
 
                     <Grid Style="{StaticResource RowStyle}"
-                          ToolTip="LaunchBox game and image lists used by Auto-Fill. Refresh downloads Metadata.zip (about 100 MB) and rebuilds the DS, GBA, GB/GBC and NES indexes.">
+                          ToolTip="Needed for SNES games: Nintendo's New 3DS SNES emulator from an SNES Virtual Console title you own. Dump it in GodMode9: Title manager, the game, Build CIA (standard). SNES forwarders run only on New 3DS and New 2DS consoles.">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="State" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Action" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="SNES template" />
+                        <TextBlock Grid.Column="1"
+                                   Margin="0,0,12,0"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding SnesTemplateState}" />
+                        <Button Grid.Column="2"
+                                Style="{StaticResource AutoNeutralButtonStyle}"
+                                Content="Import SNES Donor CIA"
+                                Command="{Binding ImportSnesDonorCommand}"
+                                ToolTip="Extract the SNES template from a decrypted New 3DS SNES Virtual Console .cia, .cxi or .app" />
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Grid.ColumnSpan="3"
+                                   Style="{StaticResource MessageStyle}"
+                                   Text="{Binding SnesTemplateMessage}" />
+                    </Grid>
+
+                    <ItemsControl ItemsSource="{Binding SnesChipPresets}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Style="{StaticResource RowStyle}"
+                                      ToolTip="SNES preset ID, in hex, that games with this expansion chip build with. Import from CIA reads it from a decrypted New 3DS SNES Virtual Console title whose game uses the chip. A game's own Preset ID wins.">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="State" />
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Action" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Style="{StaticResource LabelStyle}" Text="{Binding Label}" />
+                                    <TextBox Grid.Column="1"
+                                             Margin="0,0,12,0"
+                                             FontFamily="Consolas"
+                                             MaxLength="6"
+                                             Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.Name="{Binding Label, StringFormat={}{0} preset ID}" />
+                                    <Button Grid.Column="2"
+                                            Style="{StaticResource AutoNeutralButtonStyle}"
+                                            Content="Import from CIA"
+                                            Command="{Binding ImportCommand}"
+                                            ToolTip="Read the preset ID from a decrypted New 3DS SNES Virtual Console .cia, .cxi or .app whose game uses this chip" />
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="1"
+                                               Grid.ColumnSpan="3"
+                                               Style="{StaticResource MessageStyle}"
+                                               Text="{Binding Message}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Grid Style="{StaticResource RowStyle}"
+                          ToolTip="LaunchBox game and image lists used by Auto-Fill. Refresh downloads Metadata.zip (about 100 MB) and rebuilds the DS, GBA, GB/GBC, NES and SNES indexes.">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -338,7 +404,7 @@
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
-                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="State" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Style="{StaticResource LabelStyle}" Text="LaunchBox data" />
@@ -350,7 +416,7 @@
                             <Button Style="{StaticResource AutoNeutralButtonStyle}"
                                     Content="Refresh LaunchBox Data"
                                     Command="{Binding RefreshLaunchBoxCommand}"
-                                    ToolTip="Download the latest LaunchBox data and rebuild the DS, GBA, GB/GBC and NES indexes" />
+                                    ToolTip="Download the latest LaunchBox data and rebuild the DS, GBA, GB/GBC, NES and SNES indexes" />
                             <Button Style="{StaticResource NeutralButtonStyle}"
                                     Content="Cancel"
                                     Command="{Binding RefreshLaunchBoxCancelCommand}"
@@ -417,7 +483,7 @@
                             Style="{StaticResource AutoNeutralButtonStyle}"
                             Content="Reset to Defaults"
                             Command="{Binding DataContext.ResetAllCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                            ToolTip="Reset every setting and delete the imported GBA, GB/GBC and NES donor templates; asks first. The title ID registry and LaunchBox data are kept. Unavailable while builds or SD card copies run." />
+                            ToolTip="Reset every setting and delete the imported GBA, GB/GBC, NES and SNES donor templates; asks first. The title ID registry and LaunchBox data are kept. Unavailable while builds or SD card copies run." />
                 </StackPanel>
             </Grid>
         </Border>

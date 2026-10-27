@@ -50,6 +50,8 @@ public partial class GameViewModel : ObservableObject
     public GameSystem System => Rom.System;
     public bool IsDs => System == GameSystem.Nds;
     public bool IsGba => System == GameSystem.Gba;
+    public bool IsSnes => System == GameSystem.Snes;
+    public string SnesChipText => SnesRom.ChipName(Rom.SnesChip);
     public string SystemLabel => Label(System);
 
     public static string Label(GameSystem system) => system switch
@@ -58,6 +60,7 @@ public partial class GameViewModel : ObservableObject
         GameSystem.Gba => "GBA",
         GameSystem.Gb => "GB/GBC",
         GameSystem.Nes => "NES",
+        GameSystem.Snes => "SNES",
         _ => throw new ArgumentOutOfRangeException(nameof(system), system, null),
     };
     public string GameCode => Rom.GameCode;
@@ -122,6 +125,9 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty] private string _screen = GbaChoices.DEFAULT_SCREEN;
     [ObservableProperty] private string _ghosting = GbaChoices.DEFAULT_GHOSTING;
 
+    // SNES only: hex preset ID override; empty = automatic.
+    [ObservableProperty] private string _snesPreset = "";
+
     [ObservableProperty] private ImageSource? _bannerPreview;
     [ObservableProperty] private ImageSource? _iconPreview;
     [ObservableProperty] private string? _bannerPreviewError;
@@ -168,7 +174,17 @@ public partial class GameViewModel : ObservableObject
             IsDs && UseRomIcon, EffectiveIconBackground, SoundPath,
             [TitleShort, TitleLong, TitlePublisher],
             IsGba ? new GbaOptions(SaveType, Screen, Ghosting) : null,
-            Settings.CiaOutputFolder);
+            IsSnes ? BuildSnesPreset() : null, Settings.CiaOutputFolder);
+    }
+
+    // The card's Preset ID, else the chip's preset from Settings; null for a plain cart.
+    private ushort? BuildSnesPreset()
+    {
+        if (!SnesRom.TryParsePreset(SnesPreset, out var chosen))
+            throw new InvalidOperationException(
+                "The Preset ID must be a hex number from 0000 to FFFF, or empty for Auto.");
+        return chosen ?? (Rom.SnesChip == SnesChip.None ? null
+            : Settings.SnesChipPreset(Rom.SnesChip).Preset);
     }
 
     // Fills only unchosen art unless replace. A choice made while the lookup runs wins.

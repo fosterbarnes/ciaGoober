@@ -5,8 +5,8 @@ using Microsoft.Win32;
 
 namespace CiaGoober.ViewModels;
 
-// One DS, GBA, GB/GBC or NES tab: its selection, name filter and action bar over MainViewModel.Games.
-// UI thread only.
+// One DS, GBA, GB/GBC, NES or SNES tab: its selection, name filter and action bar over
+// MainViewModel.Games. UI thread only.
 public partial class GamesTabViewModel : ObservableObject
 {
     public GamesTabViewModel(MainViewModel main, GameSystem system)

@@ -26,6 +26,7 @@
             <TabItem Header="GBA" Tag="GBA" />
             <TabItem Header="GB/GBC" Tag="GB" />
             <TabItem Header="NES" Tag="NES" />
+            <TabItem Header="SNES" Tag="SNES" ToolTip="SNES forwarders run only on New 3DS and New 2DS consoles" />
             <TabItem Header="Settings" Tag="Settings" />
             <TabItem Header="About" Tag="About" />
         </TabControl>
@@ -34,6 +35,7 @@
             <tabs:GamesTab x:Name="GbaTab" Opacity="0" Visibility="Collapsed" DataContext="{Binding Gba}" />
             <tabs:GamesTab x:Name="GbTab" Opacity="0" Visibility="Collapsed" DataContext="{Binding Gb}" />
             <tabs:GamesTab x:Name="NesTab" Opacity="0" Visibility="Collapsed" DataContext="{Binding Nes}" />
+            <tabs:GamesTab x:Name="SnesTab" Opacity="0" Visibility="Collapsed" DataContext="{Binding Snes}" />
             <tabs:SettingsTab x:Name="SettingsTab" Opacity="0" Visibility="Collapsed" DataContext="{Binding Settings}" />
             <tabs:AboutTab x:Name="AboutTab" Opacity="0" Visibility="Collapsed" />
         </Grid>

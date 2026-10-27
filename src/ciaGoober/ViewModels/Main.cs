@@ -43,6 +43,7 @@ public partial class MainViewModel : ObservableObject
         Gba = new GamesTabViewModel(this, GameSystem.Gba);
         Gb = new GamesTabViewModel(this, GameSystem.Gb);
         Nes = new GamesTabViewModel(this, GameSystem.Nes);
+        Snes = new GamesTabViewModel(this, GameSystem.Snes);
     }
 
     public SettingsViewModel Settings { get; }
@@ -53,6 +54,7 @@ public partial class MainViewModel : ObservableObject
     public GamesTabViewModel Gba { get; }
     public GamesTabViewModel Gb { get; }
     public GamesTabViewModel Nes { get; }
+    public GamesTabViewModel Snes { get; }
 
     public GamesTabViewModel Tab(GameSystem system) => system switch
     {
@@ -60,6 +62,7 @@ public partial class MainViewModel : ObservableObject
         GameSystem.Gba => Gba,
         GameSystem.Gb => Gb,
         GameSystem.Nes => Nes,
+        GameSystem.Snes => Snes,
         _ => throw new ArgumentOutOfRangeException(nameof(system), system, null),
     };
 
@@ -220,16 +223,16 @@ public partial class MainViewModel : ObservableObject
         nameof(ResetLaunchBoxDataCommand))]
     private bool _isCopying;
 
-    // Every setting back to its default and the imported GBA, GB/GBC and NES donor templates
-    // removed. The title ID registry stays, so installed forwarders keep their IDs, and so does
+    // Every setting back to its default and the imported GBA, GB/GBC, NES and SNES donor
+    // templates removed. The title ID registry stays, so installed forwarders keep their IDs, and so does
     // the LaunchBox data. Not while builds or SD copies run, since they read both.
     [RelayCommand(CanExecute = nameof(CanReset))]
     private async Task ResetAllAsync()
     {
         if (MessageBox.Show(Application.Current.MainWindow,
             "Reset ciaGoober to defaults?\n\nEvery setting goes back to its default and the "
-            + "imported GBA, GB/GBC and NES donor templates are deleted; import them again to "
-            + "build those systems. The title ID registry and LaunchBox data are kept.",
+            + "imported GBA, GB/GBC, NES and SNES donor templates are deleted; import them again "
+            + "to build those systems. The title ID registry and LaunchBox data are kept.",
             "ciaGoober: Reset to Defaults", MessageBoxButton.YesNo, MessageBoxImage.Warning,
             MessageBoxResult.No) != MessageBoxResult.Yes) return;
         Settings.ResetToDefaults();
@@ -240,6 +243,7 @@ public partial class MainViewModel : ObservableObject
                 GbaTemplate.Remove(AppPaths.GbaTemplate);
                 VcTemplate.Remove(AppPaths.GbTemplate);
                 VcTemplate.Remove(AppPaths.NesTemplate);
+                VcTemplate.Remove(AppPaths.SnesTemplate);
             });
             Settings.ResetMessage = "Settings reset and donor templates deleted";
         }
@@ -364,12 +368,12 @@ public partial class MainViewModel : ObservableObject
                 added.Add(new GameViewModel(rom, Settings));
         }
         foreach (var game in added) Games.Add(game);
-        foreach (var tab in (GamesTabViewModel[])[Ds, Gba, Gb, Nes])
+        foreach (var tab in (GamesTabViewModel[])[Ds, Gba, Gb, Nes, Snes])
             tab.SelectedGame ??= added.FirstOrDefault(game => game.System == tab.System);
         QueueAutoFill(added, fillTitle);
 
         var known = files.Count - added.Count - errors.Count;
-        var counts = ((GamesTabViewModel[])[Ds, Gba, Gb, Nes])
+        var counts = ((GamesTabViewModel[])[Ds, Gba, Gb, Nes, Snes])
             .Select(tab => (tab.SystemLabel, Count: added.Count(game => game.System == tab.System)))
             .Where(count => count.Count > 0).Select(count => $"{count.Count} {count.SystemLabel}")
             .ToList();
@@ -404,6 +408,7 @@ public partial class MainViewModel : ObservableObject
                 GameSystem.Gba => GbaRom.Read(path),
                 GameSystem.Gb => GbRom.Read(path),
                 GameSystem.Nes => NesRom.Read(path),
+                GameSystem.Snes => SnesRom.Read(path),
                 _ => NdsRom.Read(path),
             };
             return (path, rom, null);

@@ -13,8 +13,8 @@ public partial class SettingsTab : UserControl
         InitializeComponent();
     }
 
-    // Rechecks the SD card, GBA, GB/GBC and NES templates and LaunchBox data each time the tab
-    // is shown.
+    // Rechecks the SD card, GBA, GB/GBC, NES and SNES templates and LaunchBox data each time
+    // the tab is shown.
     private async void SettingsTab_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (IsVisible && DataContext is SettingsViewModel settings)

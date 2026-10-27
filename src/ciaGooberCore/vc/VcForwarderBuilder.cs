@@ -12,16 +12,30 @@ public static class VcForwarderBuilder
     private const int _SAVE_OVERHEAD = 0x1000;
 
     // The CXI that makerom wraps with -content: the template's emulator and RomFS with this ROM
-    // in place of the donor's game, the bannertool banner and SMDH.
+    // in place of the donor's game, the bannertool banner and SMDH. snesPreset is the SNES
+    // preset the app chose (the card's, else the chip's from Settings).
     public static byte[] BuildCxi(GameSystem system, string romPath, byte[] banner, byte[] smdh,
-        VcTemplate template, int uniqueId, string gameCode, IProgress<string> log)
+        VcTemplate template, int uniqueId, string gameCode, ushort? snesPreset,
+        IProgress<string> log)
     {
-        var (rom, ramSize) = GameImage(system, romPath, log);
-        var files = new Dictionary<string, byte[]>(template.Files, StringComparer.Ordinal)
+        var files = new Dictionary<string, byte[]>(template.Files, StringComparer.Ordinal);
+        int ramSize;
+        if (system == GameSystem.Snes)
         {
-            [template.RomName] = rom,
-            ["/" + Path.GetFileName(template.RomName) + ".patch"] = _EMPTY_PATCH,
-        };
+            var image = SnesRom.Parse(File.ReadAllBytes(romPath));
+            var header = template.SnesHeader
+                ?? throw new InvalidDataException("Not an SNES template.");
+            var preset = SnesPreset(image.Chip, snesPreset);
+            log.Report($"Chip: {SnesRom.ChipName(image.Chip)}; preset ID 0x{preset:X4}");
+            files[template.RomName] = SnesRom.ToDataBin(image, header, preset);
+            files[template.SnesIcon!] = smdh;
+            ramSize = image.SramSize;
+        }
+        else
+        {
+            (files[template.RomName], ramSize) = GameImage(system, romPath, log);
+            files["/" + Path.GetFileName(template.RomName) + ".patch"] = _EMPTY_PATCH;
+        }
         var saveSize = SaveDataSize(template.Exheader, ramSize);
         log.Report($"Cartridge RAM: {ramSize} bytes; save data: {saveSize} bytes");
 
@@ -32,8 +46,8 @@ public static class VcForwarderBuilder
         return Ncch.BuildNcch(titleId, $"CTR-H-{gameCode}", exheader, exefs, RomFs.Build(files));
     }
 
-    // The game file the emulator reads and its cartridge RAM in bytes: GB ROMs as they are, NES
-    // ROMs converted to TNES.
+    // GB and NES: the game file the emulator reads and its cartridge RAM in bytes: GB ROMs as
+    // they are, NES ROMs converted to TNES.
     private static (byte[] Rom, int RamSize) GameImage(GameSystem system, string romPath,
         IProgress<string> log)
     {
@@ -51,6 +65,16 @@ public static class VcForwarderBuilder
             default:
                 throw new ArgumentOutOfRangeException(nameof(system), system, null);
         }
+    }
+
+    // The chosen preset, else the generic one for a plain cart. A chip game without a preset has
+    // no known way to run.
+    internal static ushort SnesPreset(SnesChip chip, ushort? chosen)
+    {
+        if (chosen is { } preset) return preset;
+        if (chip == SnesChip.None) return SnesRom.GENERIC_PRESET;
+        throw new InvalidOperationException($"No preset for {SnesRom.ChipLabel(chip)} games: set "
+            + "it in Settings > SNES chip presets or in the game's Preset ID.");
     }
 
     // The donor's save data size, doubled until the cartridge RAM fits twice plus overhead.

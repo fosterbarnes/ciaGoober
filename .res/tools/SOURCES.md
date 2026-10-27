@@ -9,10 +9,6 @@ this folder to `tools\` beside `ciaGoober.exe`.
 | `makerom.exe` | `EC19388004052689564103CE2339AD852A6182B6BD2A814937428C67DE163E34` | makerom v0.18 release, from `nds\YANBF\generator` |
 | `forwarder.elf` | `E2AFBB8A7C4C5D356ECD2D48D9AB147A2C37EF05D20181D7068908B117C34E9A` | Modified YANBF forwarder, built from `nds\YANBF\forwarder` |
 | `build-cia.rsf` | `72E97E56D41C846BD8E1012AB9C8959A189329EF755798253CB6D47970CC21FB` | `nds\YANBF\generator\data` |
-| `dsboot.ogg` | `65C8FC7EE5D5B752BFC9DCEAE082CDF639458DF77531BFDCBFFB4F71B490F725` | User-supplied 2026-10-27, OGG of the YANBF `dsboot.wav` (default DS banner sound) |
-| `gbaboot.ogg` | `0DB3BFED78EB5AA0DA5AC5C7288CDB098238C12BFAA5ECF250F1F701DCA99584` | User-supplied 2026-10-27, GBA SP intro, 3.0 s (default GBA banner sound) |
-| `gbcboot.ogg` | `DD2DE14E05A0E1800A8DD8346E9C3A61DDAE6D687970EB653F5D6D0B2E4CBCEC` | User-supplied 2026-10-27, Game Boy Color boot sound, 1.35 s (default GB/GBC banner sound) |
-| `nesboot.ogg` | `9C3A406B866498EE8357128EE914A043013506EAC734113B0AFC7503910BF4D1` | User-supplied 2026-10-27 (default NES banner sound) |
 
 `forwarder.elf` is identical in `YANBF\forwarder`, `YANBF\generator\data` and the
 `publish\yanbfWindowsThemed` package. Its source is YANBF

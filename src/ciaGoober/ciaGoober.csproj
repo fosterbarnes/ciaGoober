@@ -20,6 +20,7 @@
     <Resource Include="..\..\.res\icon\icon512.png" Link="Resources\icon512.png" />
     <Content Include="..\..\.version\version" Link="Version" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
     <Content Include="..\..\.res\tools\*" Exclude="..\..\.res\tools\*.md" Link="tools\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+    <Content Include="..\..\.res\ogg\*" Exclude="..\..\.res\ogg\*.md" Link="ogg\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
     <Content Include="..\..\.res\sd\*" Exclude="..\..\.res\sd\*.md" Link="sd\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
     <Content Include="..\..\.res\launchbox\*.json" Link="launchbox\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
   </ItemGroup>

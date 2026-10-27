@@ -10,8 +10,8 @@ public enum LaunchBoxRefreshStage { Download, Index }
 // both Metadata.xml passes and Files.xml.
 public sealed record LaunchBoxRefreshProgress(LaunchBoxRefreshStage Stage, long Done, long Total);
 
-// Port of launchbox.py: builds index.json (DS), indexGba.json (GBA), indexGb.json (GB and GBC)
-// and indexNes.json (NES) from the daily dump.
+// Port of launchbox.py: builds index.json (DS), indexGba.json (GBA), indexGb.json (GB and GBC),
+// indexNes.json (NES) and indexSnes.json (SNES) from the daily dump.
 public static class LaunchBoxIndexBuilder
 {
     private const string _METADATA_URL = "https://gamesdb.launchbox-app.com/Metadata.zip";
@@ -23,9 +23,10 @@ public static class LaunchBoxIndexBuilder
         ["Nintendo Game Boy"] = GameSystem.Gb,
         ["Nintendo Game Boy Color"] = GameSystem.Gb,
         ["Nintendo Entertainment System"] = GameSystem.Nes,
+        ["Super Nintendo Entertainment System"] = GameSystem.Snes,
     };
 
-    // Downloads Metadata.zip to a temp file, writes the DS, GBA, GB and NES indexes into
+    // Downloads Metadata.zip to a temp file, writes the DS, GBA, GB, NES and SNES indexes into
     // AppPaths.LaunchBox and drops the cached indexes.
     public static async Task RefreshAsync(IProgress<LaunchBoxRefreshProgress>? progress,
         CancellationToken cancellationToken)

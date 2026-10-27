@@ -9,8 +9,8 @@ using Microsoft.Win32;
 namespace CiaGoober.ViewModels;
 
 // App settings, saved to the store file on every change; nothing per game is stored. Also runs
-// the Settings page actions (folder pickers, SD receivers, GBA, GB/GBC and NES donor import,
-// LaunchBox refresh).
+// the Settings page actions (folder pickers, SD receivers, GBA, GB/GBC, NES and SNES donor
+// import, LaunchBox refresh).
 public partial class SettingsViewModel : ObservableObject
 {
     public const int MIN_PARALLEL_BUILDS = 1;
@@ -39,7 +39,21 @@ public partial class SettingsViewModel : ObservableObject
     public SettingsViewModel()
     {
         Card.PropertyChanged += Card_PropertyChanged;
+        foreach (var row in SnesChipPresets)
+        {
+            row.PropertyChanged += (_, e) =>
+            {
+                if (_storePath is not null && e.PropertyName == nameof(row.Text)) Save(_storePath);
+            };
+        }
     }
+
+    // Preset ID per SNES expansion chip; chip games build with their chip's row.
+    public IReadOnlyList<SnesChipPresetViewModel> SnesChipPresets { get; } =
+        [new(SnesChip.Dsp1), new(SnesChip.Dsp2), new(SnesChip.Cx4)];
+
+    public SnesChipPresetViewModel SnesChipPreset(SnesChip chip) =>
+        SnesChipPresets.First(row => row.Chip == chip);
 
     // The SD card in use; DS games match their ROMs against it.
     public SdCardViewModel Card { get; } = new();
@@ -54,6 +68,11 @@ public partial class SettingsViewModel : ObservableObject
         settings.SdRomFolder = data.SdRomFolder;
         settings.ParallelBuilds = data.ParallelBuilds ?? _DEFAULT_PARALLEL_BUILDS;
         settings.SelectedPage = data.SelectedPage;
+        foreach (var row in settings.SnesChipPresets)
+        {
+            if (data.SnesChipPresets?.GetValueOrDefault(row.Chip.ToString()) is { } text)
+                row.Text = text;
+        }
         try
         {
             settings.DefaultIconBackground = data.DefaultIconBackground;
@@ -174,6 +193,13 @@ public partial class SettingsViewModel : ObservableObject
 
     public string NesTemplateState => TemplateState(NesTemplateInstalled);
 
+    // Null while checking.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SnesTemplateState))]
+    private bool? _snesTemplateInstalled;
+
+    public string SnesTemplateState => TemplateState(SnesTemplateInstalled);
+
     // Card whose TWiLight Menu++ receivers the Settings row shows; null = no drive found.
     public SdCardInfo? ReceiverCard => Card.Info;
 
@@ -196,6 +222,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string? _gbaTemplateMessage;
     [ObservableProperty] private string? _gbTemplateMessage;
     [ObservableProperty] private string? _nesTemplateMessage;
+    [ObservableProperty] private string? _snesTemplateMessage;
     [ObservableProperty] private string? _launchBoxDataState;
     [ObservableProperty] private string? _launchBoxStatus;
     [ObservableProperty] private double _launchBoxProgress;
@@ -208,25 +235,28 @@ public partial class SettingsViewModel : ObservableObject
         return dialog.ShowDialog() == true ? dialog.FolderName : null;
     }
 
-    // Reads the receiver, GBA, GB/GBC and NES template and LaunchBox data state; the Settings
-    // page calls it when shown.
+    // Reads the receiver, GBA, GB/GBC, NES and SNES template and LaunchBox data state; the
+    // Settings page calls it when shown.
     public async Task RefreshPageStateAsync()
     {
         await RefreshReceiversAsync();
         GbaTemplateInstalled = null;
         GbTemplateInstalled = null;
         NesTemplateInstalled = null;
+        SnesTemplateInstalled = null;
         var refreshed = Path.Combine(AppPaths.LaunchBox, LaunchBoxIndex.FileName(GameSystem.Nds));
         try
         {
-            var (gba, gb, nes, written) = await Task.Run(() => (
+            var (gba, gb, nes, snes, written) = await Task.Run(() => (
                 GbaTemplate.IsInstalled(AppPaths.GbaTemplate),
                 VcTemplate.IsInstalled(GameSystem.Gb, AppPaths.GbTemplate),
                 VcTemplate.IsInstalled(GameSystem.Nes, AppPaths.NesTemplate),
+                VcTemplate.IsInstalled(GameSystem.Snes, AppPaths.SnesTemplate),
                 File.Exists(refreshed) ? File.GetLastWriteTime(refreshed) : (DateTime?)null));
             GbaTemplateInstalled = gba;
             GbTemplateInstalled = gb;
             NesTemplateInstalled = nes;
+            SnesTemplateInstalled = snes;
             LaunchBoxDataState = written is { } time ? $"Refreshed {time:yyyy-MM-dd HH:mm}"
                 : "Bundled copy";
         }
@@ -235,7 +265,9 @@ public partial class SettingsViewModel : ObservableObject
             GbaTemplateInstalled = false;
             GbTemplateInstalled = false;
             NesTemplateInstalled = false;
-            GbaTemplateMessage = GbTemplateMessage = NesTemplateMessage = error.Message;
+            SnesTemplateInstalled = false;
+            GbaTemplateMessage = GbTemplateMessage = NesTemplateMessage = SnesTemplateMessage =
+                error.Message;
         }
     }
 
@@ -294,7 +326,12 @@ public partial class SettingsViewModel : ObservableObject
         ParallelBuilds = _DEFAULT_PARALLEL_BUILDS;
         Card.ChosenRoot = null;
         ReceiversMessage = null;
-        GbaTemplateMessage = GbTemplateMessage = NesTemplateMessage = null;
+        GbaTemplateMessage = GbTemplateMessage = NesTemplateMessage = SnesTemplateMessage = null;
+        foreach (var row in SnesChipPresets)
+        {
+            row.Text = SnesChipPresetViewModel.DefaultText(row.Chip);
+            row.Message = null;
+        }
     }
 
     // Outcome of Reset to Defaults.
@@ -388,6 +425,12 @@ public partial class SettingsViewModel : ObservableObject
             donor => VcTemplate.ImportDonor(GameSystem.Nes, donor, AppPaths.NesTemplate),
             message => NesTemplateMessage = message);
 
+    [RelayCommand]
+    private async Task ImportSnesDonorAsync() =>
+        await ImportDonorAsync("SNES",
+            donor => VcTemplate.ImportDonor(GameSystem.Snes, donor, AppPaths.SnesTemplate),
+            message => SnesTemplateMessage = message);
+
     // Asks for a decrypted VC title of the given system and imports it off the UI thread.
     private async Task ImportDonorAsync(string system, Action<string> import, Action<string> show)
     {
@@ -461,7 +504,8 @@ public partial class SettingsViewModel : ObservableObject
         try
         {
             SettingsStore.Save(path, new SettingsData(CiaOutputFolder, PcRomFolder,
-                SdRomFolder, DefaultIconBackground, ParallelBuilds, SelectedPage));
+                SdRomFolder, DefaultIconBackground, ParallelBuilds, SelectedPage,
+                SnesChipPresets.ToDictionary(row => row.Chip.ToString(), row => row.Text)));
             StoreError = null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

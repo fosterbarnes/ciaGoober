@@ -57,6 +57,7 @@ public sealed class LaunchBoxIndex
         GameSystem.Gba => "indexGba.json",
         GameSystem.Gb => "indexGb.json",
         GameSystem.Nes => "indexNes.json",
+        GameSystem.Snes => "indexSnes.json",
         _ => throw new ArgumentOutOfRangeException(nameof(system), system, null),
     };
 

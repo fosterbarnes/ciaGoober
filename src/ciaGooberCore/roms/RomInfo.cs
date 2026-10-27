@@ -1,15 +1,16 @@
 namespace CiaGoober.Core;
 
 // Gb covers Game Boy and Game Boy Color.
-public enum GameSystem { Nds, Gba, Gb, Nes }
+public enum GameSystem { Nds, Gba, Gb, Nes, Snes }
 
 // GameCode is the 4-character code used in the CIA product code (CTR-H-<code>).
 // TitleLines are the default HOME Menu title lines: [short, long, publisher] (publisher may be "").
-// Identity is set for DS ROMs only (SD card matching).
+// Identity is set for DS ROMs only (SD card matching); SnesChip for SNES ROMs only.
 public sealed record RomInfo(string Path, GameSystem System, string GameCode, string[] TitleLines,
     string InternalTitle)
 {
     public NdsIdentity? Identity { get; init; }
+    public SnesChip SnesChip { get; init; }
 }
 
 // A DS ROM's header game code plus header CRC16 (0x15E). Equal for trimmed and untrimmed copies

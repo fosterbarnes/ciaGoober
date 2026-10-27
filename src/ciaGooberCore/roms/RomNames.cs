@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace CiaGoober.Core;
 
-// Card names for GBA, GB and NES ROMs, whose headers hold at most a short uppercase title.
+// Card names for GBA, GB, NES and SNES ROMs, whose headers hold at most a short uppercase title.
 internal static partial class RomNames
 {
     private const int _MAX_LENGTH = 64;

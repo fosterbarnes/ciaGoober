@@ -1,11 +1,12 @@
 #requires -Version 7.0
 # Non-interactive push for the agent-push skill, run only when the user asks an agent to push.
 # -Context prints what the agent needs to write buildNotes.txt; the default mode validates it, runs
-# prePush.ps1 and push.ps1 quietly, then reports. -Tags prints 10 candidate version tags; -SetTag
-# writes the one the user picked.
-param([Alias('h')][switch]$Help, [switch]$Context, [switch]$Tags, [string]$SetTag)
+# prePush.ps1 and push.ps1 quietly, then reports. -Release also runs pushRelease.ps1 after the push
+# (builds the assets, tags v<version>, publishes the GitHub release); only when the user explicitly
+# asks for a release. -Tags prints 10 candidate version tags; -SetTag writes the one the user picked.
+param([Alias('h')][switch]$Help, [switch]$Context, [switch]$Tags, [string]$SetTag, [switch]$Release)
 $ErrorActionPreference = 'Stop'
-if ($Help) { Write-Host 'agentPush.ps1 [-Context | -Tags | -SetTag <tag>]'; return }
+if ($Help) { Write-Host 'agentPush.ps1 [-Context | -Tags | -SetTag <tag> | -Release]'; return }
 . "$PSScriptRoot\scriptHelper.ps1"
 Set-Location -LiteralPath $repoRoot
 $current = requireVersion
@@ -52,7 +53,8 @@ if ($lines.Count -lt 3 -or $lines[1].Trim() -or -not ($lines[2..($lines.Count - 
 $previousPipeline = $env:BASE_BUILD_PIPELINE
 try {
     $env:BASE_BUILD_PIPELINE = '1'
-    foreach ($step in 'prePush', 'push') {
+    $steps = @('prePush', 'push') + @(if ($Release) { 'pushRelease' })
+    foreach ($step in $steps) {
         $log = [Collections.Generic.List[string]]::new()
         try { & "$PSScriptRoot\$step.ps1" *>&1 | ForEach-Object { $log.Add("$_") } }
         catch {
@@ -69,3 +71,4 @@ Set-Location -LiteralPath $repoRoot
 Write-Host "--- pushed $(git rev-parse --short=7 HEAD) to origin/$(git branch --show-current)"
 git show -s --format=%B HEAD
 git show --name-status --format= HEAD
+if ($Release) { Write-Host "--- released $releaseTag`: $appURL/releases/tag/$releaseTag" }

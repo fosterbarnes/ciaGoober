@@ -17,6 +17,7 @@ public static class RomScanner
         (".gba", GameSystem.Gba), (".agb", GameSystem.Gba),
         (".gb", GameSystem.Gb), (".gbc", GameSystem.Gb), (".sgb", GameSystem.Gb),
         (".nes", GameSystem.Nes),
+        (".sfc", GameSystem.Snes), (".smc", GameSystem.Snes),
     ];
 
     // Reparse points (symlinks, junctions) and System entries (System Volume Information,
