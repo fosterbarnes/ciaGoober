@@ -32,6 +32,7 @@ public partial class MainViewModel : ObservableObject
         Ds = new GamesTabViewModel(this, GameSystem.Nds);
         Gba = new GamesTabViewModel(this, GameSystem.Gba);
         Gb = new GamesTabViewModel(this, GameSystem.Gb);
+        Nes = new GamesTabViewModel(this, GameSystem.Nes);
     }
 
     public SettingsViewModel Settings { get; }
@@ -41,12 +42,15 @@ public partial class MainViewModel : ObservableObject
     public GamesTabViewModel Ds { get; }
     public GamesTabViewModel Gba { get; }
     public GamesTabViewModel Gb { get; }
+    public GamesTabViewModel Nes { get; }
 
     public GamesTabViewModel Tab(GameSystem system) => system switch
     {
         GameSystem.Nds => Ds,
         GameSystem.Gba => Gba,
-        _ => Gb,
+        GameSystem.Gb => Gb,
+        GameSystem.Nes => Nes,
+        _ => throw new ArgumentOutOfRangeException(nameof(system), system, null),
     };
 
     // Latest run summary or error; clears itself after a while.
@@ -59,7 +63,8 @@ public partial class MainViewModel : ObservableObject
         var (files, problems, skipped) = await Task.Run(() => ExpandPaths(paths));
         var (message, first) = await AddFilesAsync(files, "Auto-Fill finished");
         if (skipped > 0)
-            message += $". Skipped {skipped} items that are not .nds, .gba, .gb, .gbc or a folder";
+            message += $". Skipped {skipped} items that are not .nds, .gba, .gb, .gbc, .nes or a "
+                + "folder";
         if (problems.Count > 0) message += ". Could not scan: " + string.Join("; ", problems);
         ShowStatus(message);
         return first;
@@ -135,12 +140,12 @@ public partial class MainViewModel : ObservableObject
                 added.Add(new GameViewModel(rom, Settings));
         }
         foreach (var game in added) Games.Add(game);
-        foreach (var tab in (GamesTabViewModel[])[Ds, Gba, Gb])
+        foreach (var tab in (GamesTabViewModel[])[Ds, Gba, Gb, Nes])
             tab.SelectedGame ??= added.FirstOrDefault(game => game.System == tab.System);
         QueueAutoFill(added, fillTitle);
 
         var known = files.Count - added.Count - errors.Count;
-        var counts = ((GamesTabViewModel[])[Ds, Gba, Gb])
+        var counts = ((GamesTabViewModel[])[Ds, Gba, Gb, Nes])
             .Select(tab => (tab.SystemLabel, Count: added.Count(game => game.System == tab.System)))
             .Where(count => count.Count > 0).Select(count => $"{count.Count} {count.SystemLabel}")
             .ToList();
@@ -152,7 +157,7 @@ public partial class MainViewModel : ObservableObject
         } + $" ({known} already listed)";
         if (errors.Count > 0)
             message += $". Could not read {errors.Count}: " + string.Join("; ", errors);
-        // DS ROMs map to DS ROM Folder + file name and GBA and GB ROMs register by file name, so
+        // DS ROMs map to DS ROM Folder + file name and the others register by file name, so
         // equal names in different folders collide.
         var shared = Games
             .GroupBy(game => (game.System, Path.GetFileName(game.RomPath).ToLowerInvariant()))
@@ -174,6 +179,7 @@ public partial class MainViewModel : ObservableObject
             {
                 GameSystem.Gba => GbaRom.Read(path),
                 GameSystem.Gb => GbRom.Read(path),
+                GameSystem.Nes => NesRom.Read(path),
                 _ => NdsRom.Read(path),
             };
             return (path, rom, null);

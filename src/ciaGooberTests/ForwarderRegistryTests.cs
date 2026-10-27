@@ -80,16 +80,19 @@ public sealed class ForwarderRegistryTests : IDisposable
         Assert.Equal(expected, File.ReadAllText(path));
     }
 
-    // A GB entry must reload as GB: an unknown system fails the whole registry, and reading it as
-    // GBA would hand the same file name a second ID.
-    [Fact]
-    public async Task GameBoyEntryReloadsAsItsOwnSystem()
+    // A GB or NES entry must reload as its system: an unknown system fails the whole registry, and
+    // reading it as another system would hand the same file name a second ID.
+    [Theory]
+    [InlineData(GameSystem.Gb, @"D:\gb\Zelda.gbc", "Zelda.gbc", "zelda.GBC")]
+    [InlineData(GameSystem.Nes, @"D:\nes\Zelda.nes", "Zelda.nes", "zelda.NES")]
+    public async Task EmbeddedEntryReloadsAsItsOwnSystem(GameSystem system, string romPath,
+        string key, string otherCase)
     {
         var path = Write(_REGISTRY);
-        var gb = await ForwarderRegistry.Open(path).ReserveAsync(GameSystem.Gb, @"D:\gb\Zelda.gbc", "z");
+        var entry = await ForwarderRegistry.Open(path).ReserveAsync(system, romPath, "z");
         var reopened = ForwarderRegistry.Open(path);
-        Assert.Equal(new RegistryEntry("z", GameSystem.Gb, "Zelda.gbc", 0xFF402), gb);
-        Assert.Equal(gb, reopened.Find(GameSystem.Gb, "zelda.GBC"));
+        Assert.Equal(new RegistryEntry("z", system, key, 0xFF402), entry);
+        Assert.Equal(entry, reopened.Find(system, otherCase));
     }
 
     [Theory]

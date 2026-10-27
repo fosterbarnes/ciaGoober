@@ -11,6 +11,7 @@ public static class AppPaths
     public static string Registry { get; } = Path.Combine(AppData, "forwarders.json");
     public static string GbaTemplate { get; } = Path.Combine(AppData, "gbaTemplate");
     public static string GbTemplate { get; } = Path.Combine(AppData, "gbTemplate");
+    public static string NesTemplate { get; } = Path.Combine(AppData, "nesTemplate");
     public static string LaunchBox { get; } = Path.Combine(AppData, "launchbox");
     public static string LaunchBoxImages { get; } = Path.Combine(LaunchBox, "images");
     public static string LaunchBoxThumbs { get; } = Path.Combine(LaunchBox, "thumbs");
@@ -24,4 +25,12 @@ public static class AppPaths
     public static string Tools { get; } = Path.Combine(AppContext.BaseDirectory, "tools");
     public static string SdFiles { get; } = Path.Combine(AppContext.BaseDirectory, "sd");
     public static string BundledLaunchBox { get; } = Path.Combine(AppContext.BaseDirectory, "launchbox");
+
+    // Template folder of a system that runs on the NES/GB VC emulator.
+    public static string VcTemplate(GameSystem system) => system switch
+    {
+        GameSystem.Gb => GbTemplate,
+        GameSystem.Nes => NesTemplate,
+        _ => throw new ArgumentOutOfRangeException(nameof(system), system, null),
+    };
 }

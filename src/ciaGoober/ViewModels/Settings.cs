@@ -9,8 +9,8 @@ using Microsoft.Win32;
 namespace CiaGoober.ViewModels;
 
 // App settings, saved to the store file on every change; nothing per game is stored. Also runs
-// the Settings page actions (folder pickers, SD receivers, GBA and GB/GBC donor import, LaunchBox
-// refresh).
+// the Settings page actions (folder pickers, SD receivers, GBA, GB/GBC and NES donor import,
+// LaunchBox refresh).
 public partial class SettingsViewModel : ObservableObject
 {
     public const int MIN_PARALLEL_BUILDS = 1;
@@ -22,7 +22,8 @@ public partial class SettingsViewModel : ObservableObject
     private static readonly HashSet<string> _PERSISTED =
     [
         nameof(CiaOutputFolder), nameof(PcDsRomFolder), nameof(PcGbaRomFolder),
-        nameof(PcGbRomFolder), nameof(SdRomFolder), nameof(DefaultIconBackground),
+        nameof(PcGbRomFolder), nameof(PcNesRomFolder), nameof(SdRomFolder),
+        nameof(DefaultIconBackground),
         nameof(ParallelBuilds), nameof(SelectedPage),
     ];
 
@@ -32,6 +33,7 @@ public partial class SettingsViewModel : ObservableObject
     private string? _pcDsRomFolder;
     private string? _pcGbaRomFolder;
     private string? _pcGbRomFolder;
+    private string? _pcNesRomFolder;
     private string? _sdRomFolder;
     private string? _defaultIconBackground;
     private int _parallelBuilds = _DEFAULT_PARALLEL_BUILDS;
@@ -54,6 +56,7 @@ public partial class SettingsViewModel : ObservableObject
         settings.PcDsRomFolder = data.PcDsRomFolder;
         settings.PcGbaRomFolder = data.PcGbaRomFolder;
         settings.PcGbRomFolder = data.PcGbRomFolder;
+        settings.PcNesRomFolder = data.PcNesRomFolder;
         settings.SdRomFolder = data.SdRomFolder;
         settings.ParallelBuilds = data.ParallelBuilds ?? _DEFAULT_PARALLEL_BUILDS;
         settings.SelectedPage = data.SelectedPage;
@@ -93,6 +96,12 @@ public partial class SettingsViewModel : ObservableObject
     {
         get => _pcGbRomFolder;
         set => SetProperty(ref _pcGbRomFolder, Clean(value));
+    }
+
+    public string? PcNesRomFolder
+    {
+        get => _pcNesRomFolder;
+        set => SetProperty(ref _pcNesRomFolder, Clean(value));
     }
 
     // DS ROM folder on the SD card in "sd:/..." form; null = the ROM's own drive.
@@ -180,6 +189,13 @@ public partial class SettingsViewModel : ObservableObject
 
     public string GbTemplateState => TemplateState(GbTemplateInstalled);
 
+    // Null while checking.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NesTemplateState))]
+    private bool? _nesTemplateInstalled;
+
+    public string NesTemplateState => TemplateState(NesTemplateInstalled);
+
     // Card whose TWiLight Menu++ receivers the Settings row shows; null = no drive found.
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ReceiversText), nameof(ReceiversActionText))]
@@ -204,6 +220,7 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty] private string? _gbaTemplateMessage;
     [ObservableProperty] private string? _gbTemplateMessage;
+    [ObservableProperty] private string? _nesTemplateMessage;
     [ObservableProperty] private string? _launchBoxDataState;
     [ObservableProperty] private string? _launchBoxStatus;
     [ObservableProperty] private double _launchBoxProgress;
@@ -216,22 +233,25 @@ public partial class SettingsViewModel : ObservableObject
         return dialog.ShowDialog() == true ? dialog.FolderName : null;
     }
 
-    // Reads the receiver, GBA and GB/GBC template and LaunchBox data state; the Settings page
-    // calls it when shown.
+    // Reads the receiver, GBA, GB/GBC and NES template and LaunchBox data state; the Settings
+    // page calls it when shown.
     public async Task RefreshPageStateAsync()
     {
         await RefreshReceiversAsync();
         GbaTemplateInstalled = null;
         GbTemplateInstalled = null;
+        NesTemplateInstalled = null;
         var refreshed = Path.Combine(AppPaths.LaunchBox, LaunchBoxIndex.FileName(GameSystem.Nds));
         try
         {
-            var (gba, gb, written) = await Task.Run(() => (
+            var (gba, gb, nes, written) = await Task.Run(() => (
                 GbaTemplate.IsInstalled(AppPaths.GbaTemplate),
-                GbTemplate.IsInstalled(AppPaths.GbTemplate),
+                VcTemplate.IsInstalled(GameSystem.Gb, AppPaths.GbTemplate),
+                VcTemplate.IsInstalled(GameSystem.Nes, AppPaths.NesTemplate),
                 File.Exists(refreshed) ? File.GetLastWriteTime(refreshed) : (DateTime?)null));
             GbaTemplateInstalled = gba;
             GbTemplateInstalled = gb;
+            NesTemplateInstalled = nes;
             LaunchBoxDataState = written is { } time ? $"Refreshed {time:yyyy-MM-dd HH:mm}"
                 : "Bundled copy";
         }
@@ -239,7 +259,8 @@ public partial class SettingsViewModel : ObservableObject
         {
             GbaTemplateInstalled = false;
             GbTemplateInstalled = false;
-            GbaTemplateMessage = GbTemplateMessage = error.Message;
+            NesTemplateInstalled = false;
+            GbaTemplateMessage = GbTemplateMessage = NesTemplateMessage = error.Message;
         }
     }
 
@@ -279,6 +300,12 @@ public partial class SettingsViewModel : ObservableObject
     private void BrowsePcGbRomFolder()
     {
         if (PickFolder("PC GB/GBC ROM Folder", PcGbRomFolder) is { } folder) PcGbRomFolder = folder;
+    }
+
+    [RelayCommand]
+    private void BrowsePcNesRomFolder()
+    {
+        if (PickFolder("PC NES ROM Folder", PcNesRomFolder) is { } folder) PcNesRomFolder = folder;
     }
 
     [RelayCommand]
@@ -384,8 +411,14 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private async Task ImportGbDonorAsync() =>
         await ImportDonorAsync("Game Boy Color",
-            donor => GbTemplate.ImportDonor(donor, AppPaths.GbTemplate),
+            donor => VcTemplate.ImportDonor(GameSystem.Gb, donor, AppPaths.GbTemplate),
             message => GbTemplateMessage = message);
+
+    [RelayCommand]
+    private async Task ImportNesDonorAsync() =>
+        await ImportDonorAsync("NES",
+            donor => VcTemplate.ImportDonor(GameSystem.Nes, donor, AppPaths.NesTemplate),
+            message => NesTemplateMessage = message);
 
     // Asks for a decrypted VC title of the given system and imports it off the UI thread.
     private async Task ImportDonorAsync(string system, Action<string> import, Action<string> show)
@@ -461,7 +494,7 @@ public partial class SettingsViewModel : ObservableObject
         {
             SettingsStore.Save(path, new SettingsData(CiaOutputFolder, PcDsRomFolder,
                 PcGbaRomFolder, PcGbRomFolder, SdRomFolder, DefaultIconBackground, ParallelBuilds,
-                SelectedPage));
+                SelectedPage, PcNesRomFolder));
             StoreError = null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

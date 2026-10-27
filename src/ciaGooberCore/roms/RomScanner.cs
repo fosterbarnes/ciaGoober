@@ -32,6 +32,7 @@ public static class RomScanner
         ".nds" => GameSystem.Nds,
         ".gba" => GameSystem.Gba,
         ".gb" or ".gbc" => GameSystem.Gb,
+        ".nes" => GameSystem.Nes,
         _ => null,
     };
 

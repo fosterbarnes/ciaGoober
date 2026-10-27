@@ -1,7 +1,7 @@
 namespace CiaGoober.Core;
 
-// Null Source means "not chosen": DS banner falls back to online art, GBA and GB icons to the
-// banner.
+// Null Source means "not chosen": DS banner falls back to online art, GBA, GB and NES icons to
+// the banner.
 public sealed record ArtChoice(string? Source, CropRect? Crop);
 
 // SaveType is "auto" or a save type name; Screen and Ghosting use the gbaVc.py preset names.

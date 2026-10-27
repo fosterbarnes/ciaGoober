@@ -2,7 +2,7 @@ using System.Buffers.Binary;
 
 namespace CiaGoober.Core;
 
-public static class GbForwarderBuilder
+public static class VcForwarderBuilder
 {
     // A game without patches; Pokemon titles ship link-cable patches that fit only their game.
     private static readonly byte[] _EMPTY_PATCH = ";Format Sample\r\n;no patches for this game\r\n"u8
@@ -13,19 +13,15 @@ public static class GbForwarderBuilder
 
     // The CXI that makerom wraps with -content: the template's emulator and RomFS with this ROM
     // in place of the donor's game, the bannertool banner and SMDH.
-    public static byte[] BuildCxi(string romPath, byte[] banner, byte[] smdh, GbTemplate template,
-        int uniqueId, string gameCode, IProgress<string> log)
+    public static byte[] BuildCxi(GameSystem system, string romPath, byte[] banner, byte[] smdh,
+        VcTemplate template, int uniqueId, string gameCode, IProgress<string> log)
     {
-        var rom = File.ReadAllBytes(romPath);
-        GbRom.CheckRomSize(rom.Length);
-        if (!GbRom.HeaderValid(rom))
-            log.Report("Warning: the ROM header checksum is invalid (corrupt ROM or ROM hack).");
+        var (rom, ramSize) = GameImage(system, romPath, log);
         var files = new Dictionary<string, byte[]>(template.Files, StringComparer.Ordinal)
         {
             [template.RomName] = rom,
             ["/" + Path.GetFileName(template.RomName) + ".patch"] = _EMPTY_PATCH,
         };
-        var ramSize = GbRom.RamSize(rom);
         var saveSize = SaveDataSize(template.Exheader, ramSize);
         log.Report($"Cartridge RAM: {ramSize} bytes; save data: {saveSize} bytes");
 
@@ -34,6 +30,27 @@ public static class GbForwarderBuilder
         var exefs = Ncch.BuildExefs((".code", template.Code), ("banner", banner), ("icon", smdh),
             ("logo", template.Logo));
         return Ncch.BuildNcch(titleId, $"CTR-H-{gameCode}", exheader, exefs, RomFs.Build(files));
+    }
+
+    // The game file the emulator reads and its cartridge RAM in bytes: GB ROMs as they are, NES
+    // ROMs converted to TNES.
+    private static (byte[] Rom, int RamSize) GameImage(GameSystem system, string romPath,
+        IProgress<string> log)
+    {
+        var rom = File.ReadAllBytes(romPath);
+        switch (system)
+        {
+            case GameSystem.Gb:
+                GbRom.CheckRomSize(rom.Length);
+                if (!GbRom.HeaderValid(rom))
+                    log.Report("Warning: the ROM header checksum is invalid (corrupt ROM or ROM "
+                        + "hack).");
+                return (rom, GbRom.RamSize(rom));
+            case GameSystem.Nes:
+                return NesRom.ToTnes(rom, log);
+            default:
+                throw new ArgumentOutOfRangeException(nameof(system), system, null);
+        }
     }
 
     // The donor's save data size, doubled until the cartridge RAM fits twice plus overhead.

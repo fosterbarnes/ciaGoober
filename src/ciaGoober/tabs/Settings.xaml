@@ -134,6 +134,28 @@
                     </Grid>
 
                     <Grid Style="{StaticResource RowStyle}"
+                          ToolTip="Folder on this PC with NES ROMs that Scan NES Folder searches, including subfolders; Add ROMs opens here on the NES tab. They are built into their CIA, so they need no SD card folder.">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="PC NES ROM Folder" />
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding PcNesRomFolder}"
+                                 AutomationProperties.Name="PC NES ROM Folder"
+                                 KeyDown="TextBox_KeyDown" />
+                        <Button Grid.Column="2"
+                                Margin="4,0,0,0"
+                                Style="{StaticResource IconButtonStyle}"
+                                Command="{Binding BrowsePcNesRomFolderCommand}"
+                                ToolTip="Choose the PC NES ROM Folder"
+                                AutomationProperties.Name="Choose the PC NES ROM Folder">
+                            <md:PackIcon Kind="FolderOpenOutline" />
+                        </Button>
+                    </Grid>
+
+                    <Grid Style="{StaticResource RowStyle}"
                           ToolTip="Folder on the SD card holding the same DS ROMs with the same file names; every DS CIA launches its ROM from here. Empty uses the ROM's own drive.">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -341,7 +363,36 @@
                     </Grid>
 
                     <Grid Style="{StaticResource RowStyle}"
-                          ToolTip="LaunchBox game and image lists used by Auto-Fill. Refresh downloads Metadata.zip (about 100 MB) and rebuilds the DS, GBA and GB/GBC indexes.">
+                          ToolTip="Needed for NES games: Nintendo's NES emulator from an NES Virtual Console title you own. Dump it in GodMode9: Title manager, the game, Build CIA (standard).">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="NES template" />
+                        <TextBlock Grid.Column="1"
+                                   Margin="0,0,12,0"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding NesTemplateState}" />
+                        <Button Grid.Column="2"
+                                HorizontalAlignment="Left"
+                                Style="{StaticResource AutoNeutralButtonStyle}"
+                                Content="Import NES Donor CIA"
+                                Command="{Binding ImportNesDonorCommand}"
+                                ToolTip="Extract the NES template from a decrypted NES Virtual Console .cia, .cxi or .app" />
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Grid.ColumnSpan="2"
+                                   Style="{StaticResource MessageStyle}"
+                                   Text="{Binding NesTemplateMessage}" />
+                    </Grid>
+
+                    <Grid Style="{StaticResource RowStyle}"
+                          ToolTip="LaunchBox game and image lists used by Auto-Fill. Refresh downloads Metadata.zip (about 100 MB) and rebuilds the DS, GBA, GB/GBC and NES indexes.">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -361,7 +412,7 @@
                             <Button Style="{StaticResource AutoNeutralButtonStyle}"
                                     Content="Refresh LaunchBox Data"
                                     Command="{Binding RefreshLaunchBoxCommand}"
-                                    ToolTip="Download the latest LaunchBox data and rebuild the DS, GBA and GB/GBC indexes" />
+                                    ToolTip="Download the latest LaunchBox data and rebuild the DS, GBA, GB/GBC and NES indexes" />
                             <Button Style="{StaticResource NeutralButtonStyle}"
                                     Content="Cancel"
                                     Command="{Binding RefreshLaunchBoxCancelCommand}"

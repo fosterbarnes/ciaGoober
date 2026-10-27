@@ -15,7 +15,8 @@ public static partial class LaunchBoxImages
     public const string BOX_FRONT = "Box - Front";
     private const string _SITE_SEARCH = "https://gamesdb.launchbox-app.com/games/results/";
     private static readonly string[] _TYPE_ORDER = [CLEAR_LOGO, CART_FRONT, BOX_FRONT];
-    // GBA and GB HOME icons use the box front in this fixed order, whatever the ROM's region tag.
+    // GBA, GB and NES HOME icons use the box front in this fixed order, whatever the ROM's region
+    // tag.
     private static readonly string[] _GBA_BOX_REGIONS =
         ["Europe", "North America", "World", "Japan", ANY_REGION];
 
@@ -56,7 +57,7 @@ public static partial class LaunchBoxImages
     public static LaunchBoxImage? DefaultBanner(LaunchBoxGame game, string romPath) =>
         Best(game, CLEAR_LOGO, RomRegionOrder(romPath));
 
-    // GBA and GB icons prefer the box front (Europe first), then the cart like DS.
+    // GBA, GB and NES icons prefer the box front (Europe first), then the cart like DS.
     public static LaunchBoxImage? DefaultIcon(LaunchBoxGame game, RomInfo rom) =>
         (rom.System != GameSystem.Nds ? Best(game, BOX_FRONT, _GBA_BOX_REGIONS) : null)
         ?? Best(game, CART_FRONT, RomRegionOrder(rom.Path));

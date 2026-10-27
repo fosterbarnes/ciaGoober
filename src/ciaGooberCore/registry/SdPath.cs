@@ -28,7 +28,8 @@ public static partial class SdPath
         return value;
     }
 
-    // Registry key of a GBA or GB ROM: its file name only, since the ROM is embedded in the CIA.
+    // Registry key of a GBA, GB or NES ROM: its file name only, since the ROM is embedded in the
+    // CIA.
     public static string EmbeddedKey(string romPath, GameSystem system)
     {
         ArgumentNullException.ThrowIfNull(romPath);
@@ -38,8 +39,15 @@ public static partial class SdPath
             || value.EnumerateRunes().Count() <= extension.Length
             || !RomScanner.IsRom(extension, system)
             || value.AsSpan().IndexOfAny("/\\:") >= 0)
-            throw new ArgumentException(
-                $"Invalid {(system == GameSystem.Gba ? "GBA" : "Game Boy")} ROM file name: {value}");
+        {
+            var label = system switch
+            {
+                GameSystem.Gba => "GBA",
+                GameSystem.Nes => "NES",
+                _ => "Game Boy",
+            };
+            throw new ArgumentException($"Invalid {label} ROM file name: {value}");
+        }
         return value;
     }
 

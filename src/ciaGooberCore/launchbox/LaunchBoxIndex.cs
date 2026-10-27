@@ -55,7 +55,9 @@ public sealed class LaunchBoxIndex
     {
         GameSystem.Nds => "index.json",
         GameSystem.Gba => "indexGba.json",
-        _ => "indexGb.json",
+        GameSystem.Gb => "indexGb.json",
+        GameSystem.Nes => "indexNes.json",
+        _ => throw new ArgumentOutOfRangeException(nameof(system), system, null),
     };
 
     // The refreshed index in AppPaths.LaunchBox wins over the bundled seed; null when neither

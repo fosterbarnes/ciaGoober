@@ -25,6 +25,7 @@
             <TabItem Header="DS" Tag="DS" />
             <TabItem Header="GBA" Tag="GBA" />
             <TabItem Header="GB/GBC" Tag="GB" />
+            <TabItem Header="NES" Tag="NES" />
             <TabItem Header="Settings" Tag="Settings" />
             <TabItem Header="About" Tag="About" />
         </TabControl>
@@ -32,6 +33,7 @@
             <tabs:GamesTab x:Name="DsTab" Opacity="0" Visibility="Collapsed" DataContext="{Binding Ds}" />
             <tabs:GamesTab x:Name="GbaTab" Opacity="0" Visibility="Collapsed" DataContext="{Binding Gba}" />
             <tabs:GamesTab x:Name="GbTab" Opacity="0" Visibility="Collapsed" DataContext="{Binding Gb}" />
+            <tabs:GamesTab x:Name="NesTab" Opacity="0" Visibility="Collapsed" DataContext="{Binding Nes}" />
             <tabs:SettingsTab x:Name="SettingsTab" Opacity="0" Visibility="Collapsed" DataContext="{Binding Settings}" />
             <tabs:AboutTab x:Name="AboutTab" Opacity="0" Visibility="Collapsed" />
         </Grid>

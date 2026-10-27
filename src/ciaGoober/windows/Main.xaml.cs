@@ -11,6 +11,7 @@ public partial class MainWindow : Window
     private const string _DS_TAB = "DS";
     private const string _GBA_TAB = "GBA";
     private const string _GB_TAB = "GB";
+    private const string _NES_TAB = "NES";
 
     private readonly TabBar _tabBar;
     private bool _waitingForBuilds;
@@ -23,6 +24,7 @@ public partial class MainWindow : Window
             [_DS_TAB] = DsTab,
             [_GBA_TAB] = GbaTab,
             [_GB_TAB] = GbTab,
+            [_NES_TAB] = NesTab,
             ["Settings"] = SettingsTab,
             ["About"] = AboutTab,
         });
@@ -50,12 +52,14 @@ public partial class MainWindow : Window
         if (Main is not { } main || e.Data.GetData(DataFormats.FileDrop) is not string[] paths) return;
         e.Handled = true;
         if (await main.AddPathsAsync(paths) is not { } system
-            || _tabBar.SelectedName is _DS_TAB or _GBA_TAB or _GB_TAB) return;
+            || _tabBar.SelectedName is _DS_TAB or _GBA_TAB or _GB_TAB or _NES_TAB) return;
         _tabBar.Select(system switch
         {
             GameSystem.Nds => _DS_TAB,
             GameSystem.Gba => _GBA_TAB,
-            _ => _GB_TAB,
+            GameSystem.Gb => _GB_TAB,
+            GameSystem.Nes => _NES_TAB,
+            _ => throw new ArgumentOutOfRangeException(nameof(system), system, null),
         });
     }
 

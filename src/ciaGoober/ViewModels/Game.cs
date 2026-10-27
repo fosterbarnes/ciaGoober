@@ -54,7 +54,9 @@ public partial class GameViewModel : ObservableObject
     {
         GameSystem.Nds => "DS",
         GameSystem.Gba => "GBA",
-        _ => "GB/GBC",
+        GameSystem.Gb => "GB/GBC",
+        GameSystem.Nes => "NES",
+        _ => throw new ArgumentOutOfRangeException(nameof(system), system, null),
     };
     public string GameCode => Rom.GameCode;
     public string DisplayName => Path.GetFileNameWithoutExtension(Rom.Path);
@@ -73,7 +75,7 @@ public partial class GameViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(CropCommand))]
     private ArtChoice _banner = new(null, null);
 
-    // Null Source: DS uses the ROM's own icon, GBA and GB use the banner.
+    // Null Source: DS uses the ROM's own icon, the other systems use the banner.
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(BannerSourceText), nameof(IconSourceText))]
     [NotifyCanExecuteChangedFor(nameof(CropCommand))]
@@ -231,7 +233,7 @@ public partial class GameViewModel : ObservableObject
 
     private bool CanCrop(CropTarget target) => CropStart(target) is not null;
 
-    // The image a crop edits, as ForwarderBuilder picks it: a GBA or GB card without that image
+    // The image a crop edits, as ForwarderBuilder picks it: a non-DS card without that image
     // uses the other one, whose crop does not carry over. Null for the DS ROM icon or no image.
     private (string Source, CropRect? Crop)? CropStart(CropTarget target)
     {
@@ -334,7 +336,7 @@ public partial class GameViewModel : ObservableObject
         QueueIconPreview();
     }
 
-    // Same art choice as ForwarderBuilder: a GBA or GB card without a banner uses its icon image.
+    // Same art choice as ForwarderBuilder: a non-DS card without a banner uses its icon image.
     private void QueueBannerPreview()
     {
         var art = !IsDs && Banner.Source is null ? Icon : Banner;
@@ -348,7 +350,7 @@ public partial class GameViewModel : ObservableObject
         });
     }
 
-    // Same art choice as ForwarderBuilder: DS falls back to the ROM icon, GBA and GB to the banner.
+    // Same art choice as ForwarderBuilder: DS falls back to the ROM icon, the others to the banner.
     private void QueueIconPreview()
     {
         var background = EffectiveIconBackground;

@@ -5,7 +5,7 @@ using Microsoft.Win32;
 
 namespace CiaGoober.ViewModels;
 
-// One DS, GBA or GB/GBC tab: its selection, name filter and action bar over MainViewModel.Games.
+// One DS, GBA, GB/GBC or NES tab: its selection, name filter and action bar over MainViewModel.Games.
 // UI thread only.
 public partial class GamesTabViewModel : ObservableObject
 {
@@ -33,7 +33,9 @@ public partial class GamesTabViewModel : ObservableObject
         {
             GameSystem.Nds => Main.Settings.PcDsRomFolder,
             GameSystem.Gba => Main.Settings.PcGbaRomFolder,
-            _ => Main.Settings.PcGbRomFolder,
+            GameSystem.Gb => Main.Settings.PcGbRomFolder,
+            GameSystem.Nes => Main.Settings.PcNesRomFolder,
+            _ => throw new InvalidOperationException($"No ROM folder for {System}."),
         };
         set
         {
@@ -45,9 +47,14 @@ public partial class GamesTabViewModel : ObservableObject
                 case GameSystem.Gba:
                     Main.Settings.PcGbaRomFolder = value;
                     break;
-                default:
+                case GameSystem.Gb:
                     Main.Settings.PcGbRomFolder = value;
                     break;
+                case GameSystem.Nes:
+                    Main.Settings.PcNesRomFolder = value;
+                    break;
+                default:
+                    throw new InvalidOperationException($"No ROM folder for {System}.");
             }
         }
     }
@@ -63,7 +70,9 @@ public partial class GamesTabViewModel : ObservableObject
             {
                 GameSystem.Nds => "DS ROMs (*.nds)|*.nds",
                 GameSystem.Gba => "GBA ROMs (*.gba)|*.gba",
-                _ => "GB/GBC ROMs (*.gb;*.gbc)|*.gb;*.gbc",
+                GameSystem.Gb => "GB/GBC ROMs (*.gb;*.gbc)|*.gb;*.gbc",
+                GameSystem.Nes => "NES ROMs (*.nes)|*.nes",
+                _ => throw new InvalidOperationException($"No ROM filter for {System}."),
             },
         };
         if (RomFolder is { } folder && Directory.Exists(folder)) dialog.InitialDirectory = folder;

@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 
 namespace CiaGoober.Core;
 
-// Rom is the registry key: DS = canonical SD path, GBA and GB = ROM file name.
+// Rom is the registry key: DS = canonical SD path, GBA, GB and NES = ROM file name.
 public sealed record RegistryEntry(string Name, GameSystem System, string Rom, int UniqueId);
 
 // The shared title-ID registry (forwarders.json). IDs only grow and are never reused; unknown
@@ -86,7 +86,9 @@ public sealed class ForwarderRegistry
     {
         GameSystem.Nds => "nds",
         GameSystem.Gba => "gba",
-        _ => "gb",
+        GameSystem.Gb => "gb",
+        GameSystem.Nes => "nes",
+        _ => throw new ArgumentOutOfRangeException(nameof(system), system, null),
     };
 
     private static string KeyRom(GameSystem system, string rom) =>
@@ -136,6 +138,7 @@ public sealed class ForwarderRegistry
                     "nds" => GameSystem.Nds,
                     "gba" => GameSystem.Gba,
                     "gb" => GameSystem.Gb,
+                    "nes" => GameSystem.Nes,
                     _ => throw new InvalidDataException($"{Where()}: unknown system."),
                 }
                 : GameSystem.Nds;
