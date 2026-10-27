@@ -44,6 +44,20 @@ public sealed record VcTemplate(byte[] Exheader, byte[] Code, byte[] Logo,
         }
     }
 
+    // Deletes the imported donor template.
+    public static void Remove(string directory)
+    {
+        _GATE.Wait();
+        try
+        {
+            TemplateFolder.Delete(directory);
+        }
+        finally
+        {
+            _GATE.Release();
+        }
+    }
+
     // Extracts the template from a decrypted GBC or NES VC .cia, .cxi or .app.
     public static void ImportDonor(GameSystem system, string donorPath, string directory)
     {

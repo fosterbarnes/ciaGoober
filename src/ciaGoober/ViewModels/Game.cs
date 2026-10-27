@@ -35,6 +35,8 @@ public partial class GameViewModel : ObservableObject
         _titlePublisher = RomTitle(2);
         // Weak, so a card removed from the list is not kept alive by the settings.
         PropertyChangedEventManager.AddHandler(settings, OnSettingsChanged, "");
+        PropertyChangedEventManager.AddHandler(settings.Card, OnCardChanged,
+            nameof(SdCardViewModel.Index));
         RefreshSdPath();
         QueuePreviews();
     }
@@ -109,6 +111,12 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty] private string? _resolvedSdPath;
     [ObservableProperty] private string? _sdPathError;
 
+    // DS only: whether the ROM is at ResolvedSdPath on the SD card, or what to do about it.
+    [ObservableProperty] private string? _sdState;
+
+    // DS only: the sd:/ path to copy the ROM to before building; null when nothing to copy.
+    [ObservableProperty] private string? _sdCopyTarget;
+
     // GBA only.
     [ObservableProperty] private string _saveType = GbaChoices.DEFAULT_SAVE_TYPE;
     [ObservableProperty] private string _screen = GbaChoices.DEFAULT_SCREEN;
@@ -148,19 +156,19 @@ public partial class GameViewModel : ObservableObject
     // Snapshot for BuildQueue; throws with a user-facing message when the card cannot build.
     public BuildJob ToBuildJob()
     {
-        var customSdPath = string.IsNullOrWhiteSpace(CustomSdPath) ? null : CustomSdPath;
-        if (IsDs) SdPath.Resolve(RomPath, customSdPath, Settings.SdRomFolder);
+        RefreshSdPath();
+        if (IsDs && ResolvedSdPath is null) throw new InvalidOperationException(SdPathError);
         if (!IsDs && Banner.Source is null && Icon.Source is null)
             throw new InvalidOperationException(
                 $"{SystemLabel} games need a banner or icon image: choose a file or use Auto-Fill "
                 + "Artwork.");
         if (string.IsNullOrWhiteSpace(TitleShort))
             throw new InvalidOperationException("The short title is empty.");
-        return new BuildJob(RomPath, System, IsDs ? customSdPath : null, Banner, Icon,
+        return new BuildJob(RomPath, System, IsDs ? ResolvedSdPath : null, Banner, Icon,
             IsDs && UseRomIcon, EffectiveIconBackground, SoundPath,
             [TitleShort, TitleLong, TitlePublisher],
             IsGba ? new GbaOptions(SaveType, Screen, Ghosting) : null,
-            Settings.CiaOutputFolder, Settings.SdRomFolder);
+            Settings.CiaOutputFolder);
     }
 
     // Fills only unchosen art unless replace. A choice made while the lookup runs wins.
@@ -315,18 +323,55 @@ public partial class GameViewModel : ObservableObject
 
     private string RomTitle(int line) => Rom.TitleLines.ElementAtOrDefault(line) ?? "";
 
+    private void OnCardChanged(object? sender, PropertyChangedEventArgs e) => RefreshSdPath();
+
+    // Override, else the card file matching this ROM, else 3DS SD Card ROM Folder + file name;
+    // then checks that path against the card (SdState, SdCopyTarget).
     private void RefreshSdPath()
     {
         if (!IsDs) return;
+        var index = Settings.Card.Index;
+        var custom = string.IsNullOrWhiteSpace(CustomSdPath) ? null : CustomSdPath;
+        var match = index is not null && custom is null && Rom.Identity is { } identity
+            ? index.Match(RomPath, identity) : null;
+        SdCopyTarget = null;
         try
         {
-            ResolvedSdPath = SdPath.Resolve(RomPath, CustomSdPath, Settings.SdRomFolder);
+            ResolvedSdPath = SdPath.Resolve(RomPath, custom,
+                match?.Kind == SdMatchKind.Mapped ? match.SdPath : null, Settings.SdRomFolder);
             SdPathError = null;
         }
         catch (ArgumentException ex)
         {
             ResolvedSdPath = null;
             SdPathError = ex.Message;
+            SdState = null;
+            return;
+        }
+        var path = ResolvedSdPath;
+        if (index is null)
+        {
+            SdState = (Settings.Card.Error ?? "No SD card found")
+                + $"; copy this ROM to {path} on the card";
+            return;
+        }
+        var root = index.CardRoot;
+        if (match is { Kind: SdMatchKind.Ambiguous })
+        {
+            SdState = $"Several files on {root} match this ROM: "
+                + $"{string.Join(", ", match.Candidates)}; set the SD path override";
+            return;
+        }
+        var onCard = index.Find(path);
+        if (onCard is null)
+        {
+            SdState = $"Not on {root}; Build asks to copy it to {path}";
+            SdCopyTarget = path;
+        }
+        else
+        {
+            SdState = onCard.Identity == Rom.Identity ? $"On the SD card ({root})"
+                : $"A different ROM is at this path on {root}; set the SD path override";
         }
     }
 

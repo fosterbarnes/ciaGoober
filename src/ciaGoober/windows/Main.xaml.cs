@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Threading;
 using CiaGoober.Helpers;
 using CiaGoober.Tabs;
 using CiaGoober.ViewModels;
@@ -13,8 +15,15 @@ public partial class MainWindow : Window
     private const string _GB_TAB = "GB";
     private const string _NES_TAB = "NES";
 
+    private const int _WM_DEVICECHANGE = 0x0219;
+    private const int _DBT_DEVICEARRIVAL = 0x8000;
+    private const int _DBT_DEVICEREMOVECOMPLETE = 0x8004;
+    private static readonly TimeSpan _CARD_SETTLE = TimeSpan.FromSeconds(1);
+
     private readonly TabBar _tabBar;
+    private readonly DispatcherTimer _cardRefresh;
     private bool _waitingForBuilds;
+    private bool _waitingForCopy;
 
     public MainWindow()
     {
@@ -29,14 +38,39 @@ public partial class MainWindow : Window
             ["About"] = AboutTab,
         });
         WindowLocationStore.Restore(this);
-        SourceInitialized += (_, _) => WindowsTitleBarTheme.ApplyImmersiveDarkMode(this);
+        _cardRefresh = new DispatcherTimer { Interval = _CARD_SETTLE };
+        _cardRefresh.Tick += (_, _) =>
+        {
+            _cardRefresh.Stop();
+            if (Main is { } main) _ = main.Settings.Card.RefreshAsync();
+        };
+        SourceInitialized += (_, _) =>
+        {
+            WindowsTitleBarTheme.ApplyImmersiveDarkMode(this);
+            HwndSource.FromHwnd(new WindowInteropHelper(this).Handle).AddHook(WndProc);
+        };
     }
 
     private MainViewModel? Main => DataContext as MainViewModel;
 
-    // DataContext is set after construction, so the saved tab is read here.
-    private void MainWindow_Loaded(object sender, RoutedEventArgs e) =>
+    // DataContext is set after construction, so the saved tab and the SD card are read here.
+    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
         _tabBar.Start(Main?.Settings.SelectedPage);
+        if (Main is { } main) _ = main.Settings.Card.RefreshAsync();
+    }
+
+    // A drive arriving or leaving rereads the SD card once Windows has mounted it.
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == _WM_DEVICECHANGE
+            && (int)wParam is _DBT_DEVICEARRIVAL or _DBT_DEVICEREMOVECOMPLETE)
+        {
+            _cardRefresh.Stop();
+            _cardRefresh.Start();
+        }
+        return IntPtr.Zero;
+    }
 
     // Files and folders dropped anywhere in the window; other drag data is left to the controls.
     private void Window_PreviewDragOver(object sender, DragEventArgs e)
@@ -64,13 +98,30 @@ public partial class MainWindow : Window
     }
 
     // Stays open while the SD receivers are copied, so SdCard.Install can restore the card on
-    // failure. Cancels every build, then stays open until running builds stop, so none is cut
-    // off while it replaces a CIA.
+    // failure. A DS ROM copy to the card is cancelled and the window closes once its temp file
+    // is removed. Cancels every build, then stays open until running builds stop, so none is
+    // cut off while it replaces a CIA.
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
-        if (_waitingForBuilds || Main?.Settings.ReceiversActionCommand.IsRunning == true)
+        if (_waitingForBuilds || _waitingForCopy
+            || Main?.Settings.ReceiversActionCommand.IsRunning == true)
         {
             e.Cancel = true;
+            return;
+        }
+        if (Main is { IsCopying: true } copying)
+        {
+            e.Cancel = true;
+            _waitingForCopy = true;
+            IsEnabled = false;
+            copying.Shutdown();
+            copying.StatusMessage = "Closing when the SD card copy stops";
+            copying.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName != nameof(MainViewModel.IsCopying) || copying.IsCopying) return;
+                _waitingForCopy = false;
+                Dispatcher.BeginInvoke(Close);
+            };
             return;
         }
         WindowLocationStore.Save(this);

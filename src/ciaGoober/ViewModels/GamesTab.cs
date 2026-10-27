@@ -27,69 +27,45 @@ public partial class GamesTabViewModel : ObservableObject
     [ObservableProperty] private GameViewModel? _selectedGame;
     [ObservableProperty] private string _filter = "";
 
-    private string? RomFolder
-    {
-        get => System switch
-        {
-            GameSystem.Nds => Main.Settings.PcDsRomFolder,
-            GameSystem.Gba => Main.Settings.PcGbaRomFolder,
-            GameSystem.Gb => Main.Settings.PcGbRomFolder,
-            GameSystem.Nes => Main.Settings.PcNesRomFolder,
-            _ => throw new InvalidOperationException($"No ROM folder for {System}."),
-        };
-        set
-        {
-            switch (System)
-            {
-                case GameSystem.Nds:
-                    Main.Settings.PcDsRomFolder = value;
-                    break;
-                case GameSystem.Gba:
-                    Main.Settings.PcGbaRomFolder = value;
-                    break;
-                case GameSystem.Gb:
-                    Main.Settings.PcGbRomFolder = value;
-                    break;
-                case GameSystem.Nes:
-                    Main.Settings.PcNesRomFolder = value;
-                    break;
-                default:
-                    throw new InvalidOperationException($"No ROM folder for {System}.");
-            }
-        }
-    }
-
+    // Opens at the deepest folder holding this system's ROMs inside the PC ROM Folder
+    // (F:\ROMS\Game Boy Advance for GBA), else at the PC ROM Folder itself.
     [RelayCommand]
     private async Task AddRomsAsync()
     {
+        var patterns = string.Join(';', RomScanner.Extensions(System).Select(ext => "*" + ext));
         var dialog = new OpenFileDialog
         {
             Title = $"Add {SystemLabel} ROMs",
             Multiselect = true,
-            Filter = System switch
-            {
-                GameSystem.Nds => "DS ROMs (*.nds)|*.nds",
-                GameSystem.Gba => "GBA ROMs (*.gba)|*.gba",
-                GameSystem.Gb => "GB/GBC ROMs (*.gb;*.gbc)|*.gb;*.gbc",
-                GameSystem.Nes => "NES ROMs (*.nes)|*.nes",
-                _ => throw new InvalidOperationException($"No ROM filter for {System}."),
-            },
+            Filter = $"{SystemLabel} ROMs ({patterns})|{patterns}",
         };
-        if (RomFolder is { } folder && Directory.Exists(folder)) dialog.InitialDirectory = folder;
+        if (Main.Settings.PcRomFolder is { } root && Directory.Exists(root))
+        {
+            var system = System;
+            try
+            {
+                dialog.InitialDirectory = await Task.Run(() =>
+                    RomScanner.CommonFolder(RomScanner.Scan(root, system)) ?? root);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // Only the starting folder depends on the scan; Scan reports the problem.
+                dialog.InitialDirectory = root;
+            }
+        }
         if (dialog.ShowDialog() == true) await Main.AddPathsAsync(dialog.FileNames);
     }
 
-    // Scans this tab's PC ROM folder, asking for it when unset.
+    // Scans the PC ROM Folder for this tab's system, asking for the folder when unset.
     [RelayCommand]
     private async Task ScanAsync()
     {
-        if (RomFolder is null)
+        if (Main.Settings.PcRomFolder is null)
         {
-            if (SettingsViewModel.PickFolder($"PC {SystemLabel} ROM Folder", null) is not { } picked)
-                return;
-            RomFolder = picked;
+            if (SettingsViewModel.PickFolder("PC ROM Folder", null) is not { } picked) return;
+            Main.Settings.PcRomFolder = picked;
         }
-        var folder = RomFolder!;
+        var folder = Main.Settings.PcRomFolder!;
         var system = System;
         List<string> found;
         try
@@ -110,10 +86,7 @@ public partial class GamesTabViewModel : ObservableObject
     private void AutoFillAll() => Main.QueueAutoFill(Games(), "Auto-Fill finished");
 
     [RelayCommand(CanExecute = nameof(HasGames))]
-    private void BuildAll()
-    {
-        foreach (var game in Games()) Main.BuildQueue.Enqueue(game);
-    }
+    private Task BuildAllAsync() => Main.BuildGamesAsync(Games());
 
     public List<GameViewModel> Games() => Main.Games.Where(game => game.System == System).ToList();
 

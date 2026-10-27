@@ -73,6 +73,35 @@ public sealed class ForwarderRegistry
         }
     }
 
+    // The only way IDs restart at 0xFF400 (Settings > Reset Title IDs): moves the file to
+    // backupFolder\forwarders-<yyyyMMdd-HHmmss>.json under the lock, so no reservation runs
+    // meanwhile. Returns the backup path, or null when there was no file.
+    public async Task<string?> ResetAsync(string backupFolder)
+    {
+        await _gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+            using var fileLock = await LockAsync(_path + ".lock").ConfigureAwait(false);
+            string? backup = null;
+            if (File.Exists(_path))
+            {
+                Directory.CreateDirectory(backupFolder);
+                var stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
+                backup = Path.Combine(backupFolder, $"forwarders-{stamp}.json");
+                for (var n = 2; File.Exists(backup); n++)
+                    backup = Path.Combine(backupFolder, $"forwarders-{stamp}-{n}.json");
+                File.Move(_path, backup);
+            }
+            _snapshot = Load(_path).Snapshot;
+            return backup;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     public RegistryEntry? Find(GameSystem system, string rom) =>
         _snapshot.ByKey.GetValueOrDefault(Key(system, KeyRom(system, rom)));
 

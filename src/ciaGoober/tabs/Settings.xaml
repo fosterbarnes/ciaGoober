@@ -40,6 +40,10 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <Border Style="{StaticResource ContentPanelStyle}">
             <Grid Grid.IsSharedSizeScope="True">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
                 <StackPanel>
                     <TextBlock Margin="0,0,0,14"
                                Style="{StaticResource WarningMessageStyle}"
@@ -68,95 +72,29 @@
                     </Grid>
 
                     <Grid Style="{StaticResource RowStyle}"
-                          ToolTip="Folder on this PC with DS ROMs that Scan DS Folder searches, including subfolders; Add ROMs opens here on the DS tab">
+                          ToolTip="Folder on this PC with your ROMs for every system; each tab's Scan searches it and all subfolders by file type, skipping BIOS folders. Add ROMs opens at that system's ROMs inside it.">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Style="{StaticResource LabelStyle}" Text="PC DS ROM Folder" />
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="PC ROM Folder" />
                         <TextBox Grid.Column="1"
-                                 Text="{Binding PcDsRomFolder}"
-                                 AutomationProperties.Name="PC DS ROM Folder"
+                                 Text="{Binding PcRomFolder}"
+                                 AutomationProperties.Name="PC ROM Folder"
                                  KeyDown="TextBox_KeyDown" />
                         <Button Grid.Column="2"
                                 Margin="4,0,0,0"
                                 Style="{StaticResource IconButtonStyle}"
-                                Command="{Binding BrowsePcDsRomFolderCommand}"
-                                ToolTip="Choose the PC DS ROM Folder"
-                                AutomationProperties.Name="Choose the PC DS ROM Folder">
+                                Command="{Binding BrowsePcRomFolderCommand}"
+                                ToolTip="Choose the PC ROM Folder"
+                                AutomationProperties.Name="Choose the PC ROM Folder">
                             <md:PackIcon Kind="FolderOpenOutline" />
                         </Button>
                     </Grid>
 
                     <Grid Style="{StaticResource RowStyle}"
-                          ToolTip="Folder on this PC with GBA ROMs that Scan GBA Folder searches, including subfolders; Add ROMs opens here on the GBA tab. GBA ROMs are built into their CIA, so they need no SD card folder.">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Style="{StaticResource LabelStyle}" Text="PC GBA ROM Folder" />
-                        <TextBox Grid.Column="1"
-                                 Text="{Binding PcGbaRomFolder}"
-                                 AutomationProperties.Name="PC GBA ROM Folder"
-                                 KeyDown="TextBox_KeyDown" />
-                        <Button Grid.Column="2"
-                                Margin="4,0,0,0"
-                                Style="{StaticResource IconButtonStyle}"
-                                Command="{Binding BrowsePcGbaRomFolderCommand}"
-                                ToolTip="Choose the PC GBA ROM Folder"
-                                AutomationProperties.Name="Choose the PC GBA ROM Folder">
-                            <md:PackIcon Kind="FolderOpenOutline" />
-                        </Button>
-                    </Grid>
-
-                    <Grid Style="{StaticResource RowStyle}"
-                          ToolTip="Folder on this PC with GB and GBC ROMs that Scan GB/GBC Folder searches, including subfolders; Add ROMs opens here on the GB/GBC tab. They are built into their CIA, so they need no SD card folder.">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Style="{StaticResource LabelStyle}" Text="PC GB/GBC ROM Folder" />
-                        <TextBox Grid.Column="1"
-                                 Text="{Binding PcGbRomFolder}"
-                                 AutomationProperties.Name="PC GB/GBC ROM Folder"
-                                 KeyDown="TextBox_KeyDown" />
-                        <Button Grid.Column="2"
-                                Margin="4,0,0,0"
-                                Style="{StaticResource IconButtonStyle}"
-                                Command="{Binding BrowsePcGbRomFolderCommand}"
-                                ToolTip="Choose the PC GB/GBC ROM Folder"
-                                AutomationProperties.Name="Choose the PC GB/GBC ROM Folder">
-                            <md:PackIcon Kind="FolderOpenOutline" />
-                        </Button>
-                    </Grid>
-
-                    <Grid Style="{StaticResource RowStyle}"
-                          ToolTip="Folder on this PC with NES ROMs that Scan NES Folder searches, including subfolders; Add ROMs opens here on the NES tab. They are built into their CIA, so they need no SD card folder.">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Style="{StaticResource LabelStyle}" Text="PC NES ROM Folder" />
-                        <TextBox Grid.Column="1"
-                                 Text="{Binding PcNesRomFolder}"
-                                 AutomationProperties.Name="PC NES ROM Folder"
-                                 KeyDown="TextBox_KeyDown" />
-                        <Button Grid.Column="2"
-                                Margin="4,0,0,0"
-                                Style="{StaticResource IconButtonStyle}"
-                                Command="{Binding BrowsePcNesRomFolderCommand}"
-                                ToolTip="Choose the PC NES ROM Folder"
-                                AutomationProperties.Name="Choose the PC NES ROM Folder">
-                            <md:PackIcon Kind="FolderOpenOutline" />
-                        </Button>
-                    </Grid>
-
-                    <Grid Style="{StaticResource RowStyle}"
-                          ToolTip="Folder on the SD card holding the same DS ROMs with the same file names; every DS CIA launches its ROM from here. Empty uses the ROM's own drive.">
+                          ToolTip="DS ROMs only: folder on the SD card that Build copies missing DS ROMs to, and where a DS ROM is expected when no card is inserted. DS ROMs already on the card are found in any folder under any name. GBA, GB/GBC and NES ROMs are built into their CIA.">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -166,18 +104,18 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Style="{StaticResource LabelStyle}" Text="DS ROM Folder (SD card)" />
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="3DS SD Card ROM Folder" />
                         <TextBox Grid.Column="1"
                                  FontFamily="Consolas"
                                  Text="{Binding SdRomFolder}"
-                                 AutomationProperties.Name="DS ROM Folder on the SD card"
+                                 AutomationProperties.Name="3DS SD Card ROM Folder"
                                  KeyDown="TextBox_KeyDown" />
                         <Button Grid.Column="2"
                                 Margin="4,0,0,0"
                                 Style="{StaticResource IconButtonStyle}"
                                 Command="{Binding PickSdCardFolderCommand}"
                                 ToolTip="Choose the folder on the inserted SD card; its drive letter becomes sd:/"
-                                AutomationProperties.Name="Choose the DS ROM Folder on the SD card">
+                                AutomationProperties.Name="Choose the 3DS SD Card ROM Folder">
                             <md:PackIcon Kind="SdCard" />
                         </Button>
                         <TextBlock Grid.Row="1"
@@ -453,6 +391,33 @@
                                 Command="{Binding OpenRegistryFolderCommand}"
                                 ToolTip="Show the registry file in Explorer" />
                     </Grid>
+                </StackPanel>
+
+                <!-- Row 1 fills the rest of the page, so the resets stay in the bottom-right
+                     corner; they follow the rows when the page scrolls. -->
+                <StackPanel Grid.Row="1"
+                            Margin="0,14,0,0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"
+                            Orientation="Horizontal">
+                    <TextBlock Margin="{StaticResource ControlMargin}"
+                               VerticalAlignment="Center"
+                               Style="{StaticResource MessageStyle}"
+                               Text="{Binding ResetMessage}" />
+                    <Button Style="{StaticResource AutoNeutralButtonStyle}"
+                            Content="Reset Title IDs"
+                            Command="{Binding DataContext.ResetTitleIdsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            ToolTip="Forget every recorded forwarder so new builds start again at title ID 0xFF400; asks first. Installing them replaces older forwarders with the same ID on the console. The registry is moved to %LOCALAPPDATA%\ciaGoober\registryBackup. Unavailable while builds or SD card copies run." />
+                    <Button Style="{StaticResource AutoNeutralButtonStyle}"
+                            Content="Reset LaunchBox Data"
+                            Command="{Binding DataContext.ResetLaunchBoxDataCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            ToolTip="Delete the refreshed LaunchBox index and all downloaded art; asks first. Auto-Fill then uses the bundled index and downloads art again. Unavailable while builds or SD card copies run." />
+                    <!-- The style's ControlMargin spaces the buttons; the last one sits flush right. -->
+                    <Button Margin="0"
+                            Style="{StaticResource AutoNeutralButtonStyle}"
+                            Content="Reset to Defaults"
+                            Command="{Binding DataContext.ResetAllCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            ToolTip="Reset every setting and delete the imported GBA, GB/GBC and NES donor templates; asks first. The title ID registry and LaunchBox data are kept. Unavailable while builds or SD card copies run." />
                 </StackPanel>
             </Grid>
         </Border>

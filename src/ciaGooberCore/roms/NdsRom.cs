@@ -7,6 +7,8 @@ namespace CiaGoober.Core;
 public static class NdsRom
 {
     private const int _HEADER_SIZE = 0x6C;
+    // Through the header CRC16 at 0x15E.
+    private const int _IDENTITY_SIZE = 0x160;
     private const int _BANNER_V1_SIZE = 0x840;
     private const int _BANNER_MAX_SIZE = 0xA40;
     private const int _TITLE_OFFSET = 0x240;
@@ -22,17 +24,33 @@ public static class NdsRom
     public static RomInfo Read(string path)
     {
         using var file = File.OpenHandle(path);
-        var header = ReadExact(file, 0, _HEADER_SIZE, path, "header");
+        var header = ReadExact(file, 0, _IDENTITY_SIZE, path, "header");
         var internalTitle = Encoding.ASCII.GetString(header, 0, 12).Trim('\0', ' ');
-        var codeBytes = header.AsSpan(0x0C, 4);
-        if (codeBytes.ContainsAnyExceptInRange((byte)0, (byte)0x7F))
-            throw new InvalidDataException($"NDS game code is not ASCII: {path}");
-        var gameCode = Encoding.ASCII.GetString(codeBytes);
+        var identity = Identity(header, path);
         var lines = Titles(file, header, path).Values.FirstOrDefault(value => value is not null);
         string[] titleLines = lines is null
             ? [internalTitle, internalTitle, ""]
             : [string.Join(' ', lines[..^1]), string.Join(' ', lines[..^1]), lines[^1]];
-        return new RomInfo(path, GameSystem.Nds, gameCode, titleLines, internalTitle);
+        return new RomInfo(path, GameSystem.Nds, identity.GameCode, titleLines, internalTitle)
+        {
+            Identity = identity,
+        };
+    }
+
+    // Reads only the header; for SD card matching.
+    public static NdsIdentity ReadIdentity(string path)
+    {
+        using var file = File.OpenHandle(path);
+        return Identity(ReadExact(file, 0, _IDENTITY_SIZE, path, "header"), path);
+    }
+
+    private static NdsIdentity Identity(byte[] header, string path)
+    {
+        var codeBytes = header.AsSpan(0x0C, 4);
+        if (codeBytes.ContainsAnyExceptInRange((byte)0, (byte)0x7F))
+            throw new InvalidDataException($"NDS game code is not ASCII: {path}");
+        return new NdsIdentity(Encoding.ASCII.GetString(codeBytes),
+            BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(0x15E)));
     }
 
     // Banner titles per language present in the banner version; null marks a missing title.

@@ -18,6 +18,7 @@ public static class AppPaths
     public static string Logs { get; } = Path.Combine(AppData, "logs");
     public static string Jobs { get; } = Path.Combine(AppData, "jobs");
     public static string SdBackup { get; } = Path.Combine(AppData, "sdBackup");
+    public static string RegistryBackup { get; } = Path.Combine(AppData, "registryBackup");
 
     public static string DefaultCiaOutput { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "ciaGoober", "cia");

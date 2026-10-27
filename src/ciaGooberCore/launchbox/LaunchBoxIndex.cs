@@ -74,6 +74,17 @@ public sealed class LaunchBoxIndex
         }
     }
 
+    // Deletes the refreshed index and downloaded art (AppPaths.LaunchBox); lookups use the
+    // bundled index again and art downloads anew.
+    public static void DeleteData()
+    {
+        lock (_cacheLock)
+        {
+            if (Directory.Exists(AppPaths.LaunchBox)) Directory.Delete(AppPaths.LaunchBox, true);
+            _cache.Clear();
+        }
+    }
+
     public static void ClearCache()
     {
         lock (_cacheLock) _cache.Clear();

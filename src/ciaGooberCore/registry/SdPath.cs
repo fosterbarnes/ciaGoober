@@ -6,7 +6,9 @@ namespace CiaGoober.Core;
 public static partial class SdPath
 {
     private const string _INVALID_CHARS = "\\:*?\"<>|";
-    private const string _NO_DRIVE = "Set the DS ROM Folder in Settings or the SD ROM path on the card";
+    private const string _NO_DRIVE =
+        "Set the 3DS SD Card ROM Folder in Settings, insert the SD card holding this ROM, or set "
+        + "the SD path override";
 
     // Canonical "sd:/..." form of a DS ROM path on the SD card; throws on an invalid path.
     public static string Canonical(string value)
@@ -51,23 +53,29 @@ public static partial class SdPath
         return value;
     }
 
-    // The DS path TWiLight opens: card override, else SD ROM folder + file name, else the ROM's
-    // own drive (never C:).
-    public static string Resolve(string pcRomPath, string? customSdPath, string? sdRomFolder)
+    // The DS path TWiLight opens: the per-game override, else the matching file found on the
+    // inserted card, else 3DS SD Card ROM Folder + the PC file name. The PC drive is never used.
+    public static string Resolve(string pcRomPath, string? customSdPath, string? mappedSdPath,
+        string? sdRomFolder)
     {
+        ArgumentNullException.ThrowIfNull(pcRomPath);
         var custom = customSdPath?.Trim() ?? "";
         if (custom != "") return Canonical(Normalize(custom));
-        var (full, root) = SplitDrive(pcRomPath);
+        if (mappedSdPath is not null) return Canonical(mappedSdPath);
         var folder = Normalize(sdRomFolder?.Trim() ?? "");
-        if (folder != "")
-        {
-            if (!folder.StartsWith("sd:/", StringComparison.Ordinal))
-                throw new ArgumentException("DS ROM Folder must start with sd:/ or /");
-            return Canonical(Normalize(folder.TrimEnd('/') + "/" + Path.GetFileName(full)));
-        }
-        if (root is null || char.ToUpperInvariant(root[0]) == 'C') throw new ArgumentException(_NO_DRIVE);
-        return Canonical(Normalize("sd:/" + full[root.Length..]));
+        if (folder == "") throw new ArgumentException(_NO_DRIVE);
+        if (!folder.StartsWith("sd:/", StringComparison.Ordinal))
+            throw new ArgumentException("3DS SD Card ROM Folder must start with sd:/ or /");
+        return Canonical(Normalize(folder.TrimEnd('/') + "/" + Path.GetFileName(pcRomPath)));
     }
+
+    // A file on the card as "sd:/..." (card root = sd:/); throws when it is not a valid SD path.
+    public static string FromCardFile(string cardRoot, string file) =>
+        Canonical("sd:/" + Path.GetRelativePath(cardRoot, file).Replace('\\', '/'));
+
+    // The Windows path of an "sd:/..." path on the card mounted at cardRoot.
+    public static string ToCardFile(string cardRoot, string sdPath) =>
+        Path.Combine(cardRoot, Canonical(sdPath)[4..].Replace('/', Path.DirectorySeparatorChar));
 
     // A folder picked on the inserted card (J:\roms\nds) as "sd:/roms/nds"; the drive root is
     // "sd:/". C: and paths without a drive letter are not a card and throw.

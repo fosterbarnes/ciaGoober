@@ -65,6 +65,21 @@ public sealed record GbaTemplate(byte[] Exheader, byte[] RomFs, byte[] Logo)
         }
     }
 
+    // Deletes the installed template; the next GBA build downloads the pinned copy. Blocks while
+    // a build loads the template, so call it off the UI thread.
+    public static void Remove(string directory)
+    {
+        _GATE.Wait();
+        try
+        {
+            TemplateFolder.Delete(directory);
+        }
+        finally
+        {
+            _GATE.Release();
+        }
+    }
+
     // Extracts the template from a decrypted GBA VC .cia, .cxi or .app. Blocks while a build
     // downloads the template, so call it off the UI thread.
     public static void ImportDonor(string donorPath, string directory)

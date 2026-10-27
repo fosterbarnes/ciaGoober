@@ -460,7 +460,7 @@
                         <TextBlock Grid.Row="1"
                                    Style="{StaticResource LabelStyle}"
                                    Text="ROM"
-                                   ToolTip="DS ROMs must be copied to the SD path with the same file name; GBA and Game Boy ROMs are built into the CIA" />
+                                   ToolTip="DS forwarders launch the ROM from the SD path: a matching ROM already on the card is used under any name, otherwise Build offers to copy it to the 3DS SD Card ROM Folder. GBA, Game Boy and NES ROMs are built into the CIA." />
                         <StackPanel Grid.Row="1" Grid.Column="1">
                             <TextBox IsReadOnly="True"
                                      Text="{Binding RomPath, Mode=OneWay}"
@@ -484,10 +484,11 @@
                                     </TextBox.Style>
                                 </TextBox>
                                 <TextBlock Style="{StaticResource ErrorMessageStyle}" Text="{Binding SdPathError}" />
+                                <TextBlock Style="{StaticResource MessageStyle}" Text="{Binding SdState}" />
                                 <TextBox Margin="0,4,0,0"
                                          FontFamily="Consolas"
                                          Text="{Binding CustomSdPath, UpdateSourceTrigger=PropertyChanged}"
-                                         ToolTip="SD path override for this game, as sd:/folder/game.nds; leave empty to use Settings"
+                                         ToolTip="SD path override for this game, as sd:/folder/game.nds; leave empty to use the matching ROM on the card or the 3DS SD Card ROM Folder"
                                          AutomationProperties.Name="SD path override" />
                             </StackPanel>
                         </StackPanel>

@@ -38,22 +38,23 @@ public class SdPathTests
     }
 
     [Fact]
-    public void ResolvePrefersOverrideThenFolderThenDrive()
+    public void ResolvePrefersOverrideThenCardMatchThenFolder()
     {
-        Assert.Equal("sd:/games/y.nds", SdPath.Resolve(@"J:\roms\x.nds", @" \games\y.nds ", "sd:/roms"));
-        Assert.Equal("sd:/nds/x.nds", SdPath.Resolve(@"J:\roms\x.nds", "  ", @"/nds\\"));
-        Assert.Equal("sd:/roms/x.nds", SdPath.Resolve(@"J:\roms\x.nds", null, ""));
+        Assert.Equal("sd:/games/y.nds",
+            SdPath.Resolve(@"J:\roms\x.nds", @" \games\y.nds ", "sd:/card/z.nds", "sd:/roms"));
+        Assert.Equal("sd:/card/z.nds", SdPath.Resolve(@"J:\roms\x.nds", "  ", "sd:/card/z.nds", "sd:/roms"));
+        Assert.Equal("sd:/nds/x.nds", SdPath.Resolve(@"J:\roms\x.nds", "  ", null, @"/nds\\"));
     }
 
     [Theory]
     [InlineData(@"C:\roms\x.nds")]
-    [InlineData(@"c:\roms\x.nds")]
+    [InlineData(@"J:\roms\x.nds")]
     [InlineData(@"roms\x.nds")]
     [InlineData(@"\\server\share\x.nds")]
     public void ResolveNeverUsesThePcDrive(string romPath)
     {
-        var error = Assert.Throws<ArgumentException>(() => SdPath.Resolve(romPath, null, null));
-        Assert.Contains("Set the DS ROM Folder", error.Message);
+        var error = Assert.Throws<ArgumentException>(() => SdPath.Resolve(romPath, null, null, null));
+        Assert.Contains("Set the 3DS SD Card ROM Folder", error.Message);
     }
 
     [Fact]

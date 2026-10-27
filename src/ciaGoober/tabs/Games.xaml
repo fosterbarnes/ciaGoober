@@ -26,7 +26,7 @@
             <UniformGrid Rows="1">
                 <Button Style="{StaticResource ActionButtonStyle}"
                         Command="{Binding AddRomsCommand}"
-                        ToolTip="Choose ROM files to add; opens in the PC ROM Folder. Dropping files or folders on the window also adds them.">
+                        ToolTip="Choose ROM files to add; opens at this system's ROMs in the PC ROM Folder. Dropping files or folders on the window also adds them.">
                     <StackPanel Orientation="Horizontal">
                         <md:PackIcon Style="{StaticResource ButtonIconStyle}" Kind="Plus" />
                         <TextBlock Text="Add ROMs" VerticalAlignment="Center" />
@@ -34,10 +34,10 @@
                 </Button>
                 <Button Style="{StaticResource ActionButtonStyle}"
                         Command="{Binding ScanCommand}"
-                        ToolTip="Add every ROM in the PC ROM Folder and its subfolders; asks for the folder when it is not set">
+                        ToolTip="Add every ROM of this tab's system in the PC ROM Folder and its subfolders, skipping BIOS folders; asks for the folder when it is not set">
                     <StackPanel Orientation="Horizontal">
                         <md:PackIcon Style="{StaticResource ButtonIconStyle}" Kind="FolderSearchOutline" />
-                        <TextBlock Text="{Binding SystemLabel, StringFormat=Scan {0} Folder}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding SystemLabel, StringFormat=Scan {0} ROMs}" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
                 <Button Style="{StaticResource ActionButtonStyle}"

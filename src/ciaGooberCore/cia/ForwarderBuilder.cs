@@ -23,7 +23,8 @@ public static class ForwarderBuilder
             GameSystem.Nes => NesRom.Read(job.RomPath),
             _ => throw new ArgumentOutOfRangeException(nameof(job), job.System, null),
         };
-        var key = ds ? SdPath.Resolve(job.RomPath, job.CustomSdPath, job.SdRomFolder)
+        var key = ds ? SdPath.Canonical(job.SdRomPath
+                ?? throw new ArgumentException("DS build job has no SD ROM path.", nameof(job)))
             : SdPath.EmbeddedKey(job.RomPath, job.System);
         var output = Path.GetFullPath(OutputNaming.CiaPath(job.OutputFolder,
             registry.Find(job.System, key), job.System, key, job.RomPath));

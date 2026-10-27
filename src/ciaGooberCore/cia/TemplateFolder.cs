@@ -21,6 +21,12 @@ internal static class TemplateFolder
         }
     }
 
+    // Removes an installed template; a missing folder is already removed.
+    public static void Delete(string directory)
+    {
+        if (Directory.Exists(directory)) Directory.Delete(directory, true);
+    }
+
     // Best-effort like the original's rmtree(ignore_errors): never hides the save's own error.
     private static void DeleteStaging(string staging)
     {

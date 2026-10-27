@@ -5,10 +5,9 @@ using System.Text.Json;
 namespace CiaGoober.ViewModels;
 
 // settings.json shape. Missing fields read as null and take the default.
-public sealed record SettingsData(string? CiaOutputFolder, string? PcDsRomFolder,
-    string? PcGbaRomFolder, string? PcGbRomFolder, string? SdRomFolder,
-    string? DefaultIconBackground, int? ParallelBuilds, string? SelectedPage,
-    string? PcNesRomFolder);
+public sealed record SettingsData(string? CiaOutputFolder, string? PcRomFolder,
+    string? SdRomFolder, string? DefaultIconBackground, int? ParallelBuilds,
+    string? SelectedPage);
 
 public static class SettingsStore
 {
@@ -23,7 +22,7 @@ public static class SettingsStore
     // stays on disk until the next save replaces it.
     public static (SettingsData Data, string? Problem) Load(string path)
     {
-        var empty = new SettingsData(null, null, null, null, null, null, null, null, null);
+        var empty = new SettingsData(null, null, null, null, null, null);
         if (!File.Exists(path)) return (empty, null);
         try
         {

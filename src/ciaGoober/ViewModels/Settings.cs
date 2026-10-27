@@ -21,8 +21,7 @@ public partial class SettingsViewModel : ObservableObject
 
     private static readonly HashSet<string> _PERSISTED =
     [
-        nameof(CiaOutputFolder), nameof(PcDsRomFolder), nameof(PcGbaRomFolder),
-        nameof(PcGbRomFolder), nameof(PcNesRomFolder), nameof(SdRomFolder),
+        nameof(CiaOutputFolder), nameof(PcRomFolder), nameof(SdRomFolder),
         nameof(DefaultIconBackground),
         nameof(ParallelBuilds), nameof(SelectedPage),
     ];
@@ -30,22 +29,20 @@ public partial class SettingsViewModel : ObservableObject
     // Null until Load attaches the file, so applying loaded values does not write it back.
     private string? _storePath;
     private string _ciaOutputFolder = AppPaths.DefaultCiaOutput;
-    private string? _pcDsRomFolder;
-    private string? _pcGbaRomFolder;
-    private string? _pcGbRomFolder;
-    private string? _pcNesRomFolder;
+    private string? _pcRomFolder;
     private string? _sdRomFolder;
     private string? _defaultIconBackground;
     private int _parallelBuilds = _DEFAULT_PARALLEL_BUILDS;
     private string? _selectedPage;
 
-    // Drive picked with Choose Drive, checked with the removable drives until the app closes.
-    private string? _chosenCardRoot;
-
     // Defaults that are never saved.
     public SettingsViewModel()
     {
+        Card.PropertyChanged += Card_PropertyChanged;
     }
+
+    // The SD card in use; DS games match their ROMs against it.
+    public SdCardViewModel Card { get; } = new();
 
     public static SettingsViewModel Load(string path)
     {
@@ -53,10 +50,7 @@ public partial class SettingsViewModel : ObservableObject
         var settings = new SettingsViewModel();
         List<string> problems = problem is null ? [] : [problem];
         settings.CiaOutputFolder = data.CiaOutputFolder ?? AppPaths.DefaultCiaOutput;
-        settings.PcDsRomFolder = data.PcDsRomFolder;
-        settings.PcGbaRomFolder = data.PcGbaRomFolder;
-        settings.PcGbRomFolder = data.PcGbRomFolder;
-        settings.PcNesRomFolder = data.PcNesRomFolder;
+        settings.PcRomFolder = data.PcRomFolder;
         settings.SdRomFolder = data.SdRomFolder;
         settings.ParallelBuilds = data.ParallelBuilds ?? _DEFAULT_PARALLEL_BUILDS;
         settings.SelectedPage = data.SelectedPage;
@@ -80,31 +74,15 @@ public partial class SettingsViewModel : ObservableObject
         set => SetProperty(ref _ciaOutputFolder, Clean(value) ?? AppPaths.DefaultCiaOutput);
     }
 
-    public string? PcDsRomFolder
+    // One PC folder for every system; each tab's Scan picks its own ROMs by extension.
+    public string? PcRomFolder
     {
-        get => _pcDsRomFolder;
-        set => SetProperty(ref _pcDsRomFolder, Clean(value));
+        get => _pcRomFolder;
+        set => SetProperty(ref _pcRomFolder, Clean(value));
     }
 
-    public string? PcGbaRomFolder
-    {
-        get => _pcGbaRomFolder;
-        set => SetProperty(ref _pcGbaRomFolder, Clean(value));
-    }
-
-    public string? PcGbRomFolder
-    {
-        get => _pcGbRomFolder;
-        set => SetProperty(ref _pcGbRomFolder, Clean(value));
-    }
-
-    public string? PcNesRomFolder
-    {
-        get => _pcNesRomFolder;
-        set => SetProperty(ref _pcNesRomFolder, Clean(value));
-    }
-
-    // DS ROM folder on the SD card in "sd:/..." form; null = the ROM's own drive.
+    // 3DS SD Card ROM Folder in "sd:/..." form: where Build copies missing DS ROMs and where a
+    // DS ROM is expected when the card has no match; null = none set.
     public string? SdRomFolder
     {
         get => _sdRomFolder;
@@ -197,10 +175,7 @@ public partial class SettingsViewModel : ObservableObject
     public string NesTemplateState => TemplateState(NesTemplateInstalled);
 
     // Card whose TWiLight Menu++ receivers the Settings row shows; null = no drive found.
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ReceiversText), nameof(ReceiversActionText))]
-    [NotifyCanExecuteChangedFor(nameof(ReceiversActionCommand))]
-    private SdCardInfo? _receiverCard;
+    public SdCardInfo? ReceiverCard => Card.Info;
 
     [ObservableProperty] private string? _receiversMessage;
 
@@ -285,33 +260,15 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void BrowsePcDsRomFolder()
+    private void BrowsePcRomFolder()
     {
-        if (PickFolder("PC DS ROM Folder", PcDsRomFolder) is { } folder) PcDsRomFolder = folder;
-    }
-
-    [RelayCommand]
-    private void BrowsePcGbaRomFolder()
-    {
-        if (PickFolder("PC GBA ROM Folder", PcGbaRomFolder) is { } folder) PcGbaRomFolder = folder;
-    }
-
-    [RelayCommand]
-    private void BrowsePcGbRomFolder()
-    {
-        if (PickFolder("PC GB/GBC ROM Folder", PcGbRomFolder) is { } folder) PcGbRomFolder = folder;
-    }
-
-    [RelayCommand]
-    private void BrowsePcNesRomFolder()
-    {
-        if (PickFolder("PC NES ROM Folder", PcNesRomFolder) is { } folder) PcNesRomFolder = folder;
+        if (PickFolder("PC ROM Folder", PcRomFolder) is { } folder) PcRomFolder = folder;
     }
 
     [RelayCommand]
     private void PickSdCardFolder()
     {
-        if (PickFolder("DS ROM Folder on the SD card", null) is not { } folder) return;
+        if (PickFolder("3DS SD Card ROM Folder", null) is not { } folder) return;
         try
         {
             SdRomFolder = SdPath.FromCardFolder(folder);
@@ -325,27 +282,41 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void SetIconBackground(string color) => IconBackgroundText = color;
 
-    // The chosen drive first, then the first removable drive with TWiLight Menu++, then one that
-    // could not be read, then any.
-    [RelayCommand]
-    private async Task RefreshReceiversAsync()
+    // Every saved setting except the open tab; MainViewModel.ResetAllAsync also removes the
+    // donor templates.
+    public void ResetToDefaults()
     {
-        var chosen = _chosenCardRoot;
-        try
+        CiaOutputFolder = AppPaths.DefaultCiaOutput;
+        PcRomFolder = null;
+        SdRomFolder = null;
+        SdRomFolderError = null;
+        IconBackgroundText = "";
+        ParallelBuilds = _DEFAULT_PARALLEL_BUILDS;
+        Card.ChosenRoot = null;
+        ReceiversMessage = null;
+        GbaTemplateMessage = GbTemplateMessage = NesTemplateMessage = null;
+    }
+
+    // Outcome of Reset to Defaults.
+    [ObservableProperty] private string? _resetMessage;
+
+    [RelayCommand]
+    private Task RefreshReceiversAsync() => Card.RefreshAsync();
+
+    private void Card_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
         {
-            ReceiverCard = await Task.Run(() =>
-            {
-                var cards = SdCard.FindCards(AppPaths.SdFiles)
-                    .Where(card => !SameRoot(card.Root, chosen)).ToList();
-                if (chosen is not null) cards.Insert(0, SdCard.Inspect(chosen, AppPaths.SdFiles));
-                return cards.FirstOrDefault(card => card.HasTwilight)
-                    ?? cards.FirstOrDefault(card => card.Error is not null) ?? cards.FirstOrDefault();
-            });
-        }
-        catch (Exception error)
-        {
-            ReceiverCard = null;
-            ReceiversMessage = $"Could not read the SD cards: {error.Message}";
+            case nameof(SdCardViewModel.Info):
+                OnPropertyChanged(nameof(ReceiverCard));
+                OnPropertyChanged(nameof(ReceiversText));
+                OnPropertyChanged(nameof(ReceiversActionText));
+                ReceiversActionCommand.NotifyCanExecuteChanged();
+                break;
+            // An unreadable card shows in ReceiversText; this is for a failed drive search.
+            case nameof(SdCardViewModel.Error) when Card is { Info: null, Error: { } error }:
+                ReceiversMessage = error;
+                break;
         }
     }
 
@@ -364,7 +335,7 @@ public partial class SettingsViewModel : ObservableObject
                 ReceiversMessage = $"{root} is the system drive, not an SD card";
                 return;
             }
-            _chosenCardRoot = root;
+            Card.ChosenRoot = root;
             ReceiversMessage = null;
             await RefreshReceiversAsync();
             return;
@@ -399,9 +370,6 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     private bool CanRunReceiversAction() => ReceiverCard is not { AllCurrent: true };
-
-    private static bool SameRoot(string a, string? b) =>
-        string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
 
     [RelayCommand]
     private async Task ImportGbaDonorAsync() =>
@@ -492,9 +460,8 @@ public partial class SettingsViewModel : ObservableObject
     {
         try
         {
-            SettingsStore.Save(path, new SettingsData(CiaOutputFolder, PcDsRomFolder,
-                PcGbaRomFolder, PcGbRomFolder, SdRomFolder, DefaultIconBackground, ParallelBuilds,
-                SelectedPage, PcNesRomFolder));
+            SettingsStore.Save(path, new SettingsData(CiaOutputFolder, PcRomFolder,
+                SdRomFolder, DefaultIconBackground, ParallelBuilds, SelectedPage));
             StoreError = null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
