@@ -26,6 +26,8 @@ $licenseFile = "$repoRoot\LICENSE"
 $appPublisher = 'fosterbarnes'
 $appURL = "https://github.com/$appPublisher/$projectName"
 $ghRepo = "$appPublisher/$projectName"
+# agentPush.ps1 publishes the GitHub release after every push (user decision 2026-10-27).
+$agentPushRelease = $true
 $buildNotesMd = "$repoRoot\buildNotes.md"
 # Private word list for version tags (copied from oc, gitignored).
 $yapWords = "$repoRoot\.res\yapBot.json"

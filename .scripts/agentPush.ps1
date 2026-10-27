@@ -1,9 +1,10 @@
 #requires -Version 7.0
 # Non-interactive push for the agent-push skill, run only when the user asks an agent to push.
 # -Context prints what the agent needs to write buildNotes.txt; the default mode validates it, runs
-# prePush.ps1 and push.ps1 quietly, then reports. -Release also runs pushRelease.ps1 after the push
-# (builds the assets, tags v<version>, publishes the GitHub release); only when the user explicitly
-# asks for a release. -Tags prints 10 candidate version tags; -SetTag writes the one the user picked.
+# prePush.ps1 and push.ps1 quietly, then reports. With $agentPushRelease in scriptHelper.ps1 (or
+# -Release) it then runs pushRelease.ps1 (builds the assets, tags v<version>, publishes the GitHub
+# release), unless that release already exists. -Tags prints 10 candidate version tags; -SetTag
+# writes the one the user picked.
 param([Alias('h')][switch]$Help, [switch]$Context, [switch]$Tags, [string]$SetTag, [switch]$Release)
 $ErrorActionPreference = 'Stop'
 if ($Help) { Write-Host 'agentPush.ps1 [-Context | -Tags | -SetTag <tag> | -Release]'; return }
@@ -23,8 +24,23 @@ $unbumped = getUnbumpedCodeChanges
 $bumpFix = "Code changed but the version is still $current. Run .scripts\bumpVersion.ps1, update this " +
     "session's buildNotes.md heading and Version bullet, then rerun agentPush.ps1 -Context."
 
+# 'on', 'off' or 'exists'. An existing release is never redone: pushRelease.ps1 would force-move its
+# tag to the new commit and then fail to create the release. A failed lookup counts as missing, so
+# pushRelease.ps1 reports the real problem.
+$releasePlan = 'off'
+if ($Release -or (Get-Variable agentPushRelease -ValueOnly -ErrorAction Ignore)) {
+    gh release view $releaseTag --repo $ghRepo *> $null
+    $releasePlan = $LASTEXITCODE -eq 0 ? 'exists' : 'on'
+}
+$releaseText = switch ($releasePlan) {
+    'on' { "on: publishes $releaseTag after the push" }
+    'exists' { "$releaseTag already exists, skipped" }
+    default { 'off' }
+}
+
 if ($Context) {
     Write-Host "branch: $(git branch --show-current)  version: $current $tagWord"
+    Write-Host "release: $releaseText"
     Write-Host "line 1: v$current $tagWord [<label> > <summary>]"
     Write-Host "labels (decision order; rules in AGENTS.md 'buildNotes.txt' section): $($commitLabels -join ' ')"
     Write-Host '--- status'
@@ -53,7 +69,7 @@ if ($lines.Count -lt 3 -or $lines[1].Trim() -or -not ($lines[2..($lines.Count - 
 $previousPipeline = $env:BASE_BUILD_PIPELINE
 try {
     $env:BASE_BUILD_PIPELINE = '1'
-    $steps = @('prePush', 'push') + @(if ($Release) { 'pushRelease' })
+    $steps = @('prePush', 'push') + @(if ($releasePlan -eq 'on') { 'pushRelease' })
     foreach ($step in $steps) {
         $log = [Collections.Generic.List[string]]::new()
         try { & "$PSScriptRoot\$step.ps1" *>&1 | ForEach-Object { $log.Add("$_") } }
@@ -71,4 +87,7 @@ Set-Location -LiteralPath $repoRoot
 Write-Host "--- pushed $(git rev-parse --short=7 HEAD) to origin/$(git branch --show-current)"
 git show -s --format=%B HEAD
 git show --name-status --format= HEAD
-if ($Release) { Write-Host "--- released $releaseTag`: $appURL/releases/tag/$releaseTag" }
+switch ($releasePlan) {
+    'on' { Write-Host "--- released $releaseTag`: $appURL/releases/tag/$releaseTag" }
+    'exists' { Write-Host "--- release $releaseTag already exists; skipped" }
+}
