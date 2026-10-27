@@ -1,0 +1,33 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Styles and converters used by more than one tab; merged in App.xaml after the theme. -->
+    <BooleanToVisibilityConverter x:Key="VisibleWhenTrue" />
+
+    <!-- Status or note line; hidden while empty, so a missing message takes no space. -->
+    <Style x:Key="MessageStyle" TargetType="{x:Type TextBlock}">
+        <Setter Property="Margin" Value="0,4,0,0" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{StaticResource MetadataTextBrush}" />
+        <Style.Triggers>
+            <Trigger Property="Text" Value="">
+                <Setter Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="Text" Value="{x:Null}">
+                <Setter Property="Visibility" Value="Collapsed" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="ErrorMessageStyle" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource MessageStyle}">
+        <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+    </Style>
+
+    <Style x:Key="WarningMessageStyle" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource MessageStyle}">
+        <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
+    </Style>
+
+    <!-- Neutral text button sized to its content. -->
+    <Style x:Key="AutoNeutralButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource NeutralButtonStyle}">
+        <Setter Property="Width" Value="Auto" />
+    </Style>
+</ResourceDictionary>

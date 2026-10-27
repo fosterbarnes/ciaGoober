@@ -1,0 +1,409 @@
+<UserControl x:Class="CiaGoober.Tabs.SettingsTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:vm="clr-namespace:CiaGoober.ViewModels"
+             IsVisibleChanged="SettingsTab_IsVisibleChanged">
+    <!-- Settings tab. DataContext = SettingsViewModel. -->
+    <UserControl.Resources>
+        <Style x:Key="LabelStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="Margin" Value="0,0,12,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+        </Style>
+        <Style x:Key="RowStyle" TargetType="{x:Type Grid}">
+            <Setter Property="Margin" Value="0,0,0,14" />
+        </Style>
+        <Style x:Key="SwatchButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisualStyle}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="SwatchBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{StaticResource BorderStrongBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource SmallCornerRadius}" />
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="SwatchBorder" Property="BorderBrush" Value="{StaticResource AccentBorderBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Border Style="{StaticResource ContentPanelStyle}">
+            <Grid Grid.IsSharedSizeScope="True">
+                <StackPanel>
+                    <TextBlock Margin="0,0,0,14"
+                               Style="{StaticResource WarningMessageStyle}"
+                               Text="{Binding StoreError}" />
+
+                    <Grid Style="{StaticResource RowStyle}"
+                          ToolTip="Finished .cia files are saved here; empty uses Documents\ciaGoober\cia">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="CIA Output Folder" />
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding CiaOutputFolder}"
+                                 AutomationProperties.Name="CIA Output Folder"
+                                 KeyDown="TextBox_KeyDown" />
+                        <Button Grid.Column="2"
+                                Margin="4,0,0,0"
+                                Style="{StaticResource IconButtonStyle}"
+                                Command="{Binding BrowseCiaOutputFolderCommand}"
+                                ToolTip="Choose the CIA Output Folder"
+                                AutomationProperties.Name="Choose the CIA Output Folder">
+                            <md:PackIcon Kind="FolderOpenOutline" />
+                        </Button>
+                    </Grid>
+
+                    <Grid Style="{StaticResource RowStyle}"
+                          ToolTip="Folder on this PC with DS ROMs that Scan DS Folder searches, including subfolders; Add ROMs opens here on the DS tab">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="PC DS ROM Folder" />
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding PcDsRomFolder}"
+                                 AutomationProperties.Name="PC DS ROM Folder"
+                                 KeyDown="TextBox_KeyDown" />
+                        <Button Grid.Column="2"
+                                Margin="4,0,0,0"
+                                Style="{StaticResource IconButtonStyle}"
+                                Command="{Binding BrowsePcDsRomFolderCommand}"
+                                ToolTip="Choose the PC DS ROM Folder"
+                                AutomationProperties.Name="Choose the PC DS ROM Folder">
+                            <md:PackIcon Kind="FolderOpenOutline" />
+                        </Button>
+                    </Grid>
+
+                    <Grid Style="{StaticResource RowStyle}"
+                          ToolTip="Folder on this PC with GBA ROMs that Scan GBA Folder searches, including subfolders; Add ROMs opens here on the GBA tab. GBA ROMs are built into their CIA, so they need no SD card folder.">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="PC GBA ROM Folder" />
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding PcGbaRomFolder}"
+                                 AutomationProperties.Name="PC GBA ROM Folder"
+                                 KeyDown="TextBox_KeyDown" />
+                        <Button Grid.Column="2"
+                                Margin="4,0,0,0"
+                                Style="{StaticResource IconButtonStyle}"
+                                Command="{Binding BrowsePcGbaRomFolderCommand}"
+                                ToolTip="Choose the PC GBA ROM Folder"
+                                AutomationProperties.Name="Choose the PC GBA ROM Folder">
+                            <md:PackIcon Kind="FolderOpenOutline" />
+                        </Button>
+                    </Grid>
+
+                    <Grid Style="{StaticResource RowStyle}"
+                          ToolTip="Folder on this PC with GB and GBC ROMs that Scan GB/GBC Folder searches, including subfolders; Add ROMs opens here on the GB/GBC tab. They are built into their CIA, so they need no SD card folder.">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="PC GB/GBC ROM Folder" />
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding PcGbRomFolder}"
+                                 AutomationProperties.Name="PC GB/GBC ROM Folder"
+                                 KeyDown="TextBox_KeyDown" />
+                        <Button Grid.Column="2"
+                                Margin="4,0,0,0"
+                                Style="{StaticResource IconButtonStyle}"
+                                Command="{Binding BrowsePcGbRomFolderCommand}"
+                                ToolTip="Choose the PC GB/GBC ROM Folder"
+                                AutomationProperties.Name="Choose the PC GB/GBC ROM Folder">
+                            <md:PackIcon Kind="FolderOpenOutline" />
+                        </Button>
+                    </Grid>
+
+                    <Grid Style="{StaticResource RowStyle}"
+                          ToolTip="Folder on the SD card holding the same DS ROMs with the same file names; every DS CIA launches its ROM from here. Empty uses the ROM's own drive.">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="DS ROM Folder (SD card)" />
+                        <TextBox Grid.Column="1"
+                                 FontFamily="Consolas"
+                                 Text="{Binding SdRomFolder}"
+                                 AutomationProperties.Name="DS ROM Folder on the SD card"
+                                 KeyDown="TextBox_KeyDown" />
+                        <Button Grid.Column="2"
+                                Margin="4,0,0,0"
+                                Style="{StaticResource IconButtonStyle}"
+                                Command="{Binding PickSdCardFolderCommand}"
+                                ToolTip="Choose the folder on the inserted SD card; its drive letter becomes sd:/"
+                                AutomationProperties.Name="Choose the DS ROM Folder on the SD card">
+                            <md:PackIcon Kind="SdCard" />
+                        </Button>
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Style="{StaticResource ErrorMessageStyle}"
+                                   Text="{Binding SdRomFolderError}" />
+                    </Grid>
+
+                    <Grid Style="{StaticResource RowStyle}"
+                          ToolTip="Modified TWiLight Menu++ files that DS forwarders launch through, in _nds\TWiLightMenu on the SD card. Files they replace are backed up to %LOCALAPPDATA%\ciaGoober\sdBackup first.">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="TWiLight receivers" />
+                        <TextBlock Grid.Column="1"
+                                   Margin="0,0,12,0"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding ReceiversText}">
+                            <TextBlock.Style>
+                                <Style TargetType="{x:Type TextBlock}">
+                                    <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ReceiverCard.HasTwilight}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding ReceiverCard.AllCurrent}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                            <Button Margin="0,0,4,0"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    Command="{Binding RefreshReceiversCommand}"
+                                    ToolTip="Check the SD card again"
+                                    AutomationProperties.Name="Check the SD card again">
+                                <md:PackIcon Kind="Refresh" />
+                            </Button>
+                            <Button Margin="0"
+                                    Style="{StaticResource AutoNeutralButtonStyle}"
+                                    Content="{Binding ReceiversActionText}"
+                                    Command="{Binding ReceiversActionCommand}"
+                                    ToolTip="Install or update the receivers on the card after asking; Choose Drive picks a card that is not listed, such as a reader Windows reports as a fixed disk" />
+                        </StackPanel>
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Grid.ColumnSpan="2"
+                                   Style="{StaticResource MessageStyle}"
+                                   Text="{Binding ReceiversMessage}" />
+                    </Grid>
+
+                    <Grid Style="{StaticResource RowStyle}"
+                          ToolTip="Fills transparent parts of HOME Menu icons for games without their own Icon Background">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="Default Icon Background" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <ItemsControl VerticalAlignment="Center"
+                                          ItemsSource="{x:Static vm:SettingsViewModel.IconBackgroundSwatches}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource SwatchButtonStyle}"
+                                                Background="{Binding}"
+                                                Command="{Binding DataContext.SetIconBackgroundCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                ToolTip="{Binding}"
+                                                AutomationProperties.Name="{Binding}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBox Width="96"
+                                     Margin="6,0,8,0"
+                                     FontFamily="Consolas"
+                                     MaxLength="7"
+                                     Text="{Binding IconBackgroundText}"
+                                     ToolTip="#RRGGBB; empty uses white"
+                                     AutomationProperties.Name="Default Icon Background as #RRGGBB"
+                                     KeyDown="TextBox_KeyDown" />
+                            <Border Width="28"
+                                    Height="28"
+                                    Background="{Binding EffectiveIconBackground}"
+                                    BorderBrush="{StaticResource BorderStrongBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="{StaticResource SmallCornerRadius}"
+                                    ToolTip="Icon background in use" />
+                        </StackPanel>
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Style="{StaticResource ErrorMessageStyle}"
+                                   Text="{Binding IconBackgroundError}" />
+                    </Grid>
+
+                    <Grid Style="{StaticResource RowStyle}"
+                          ToolTip="How many CIAs build at the same time">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="Parallel builds" />
+                        <ComboBox Grid.Column="1"
+                                  Width="72"
+                                  HorizontalAlignment="Left"
+                                  ItemsSource="{x:Static vm:SettingsViewModel.ParallelBuildChoices}"
+                                  SelectedItem="{Binding ParallelBuilds}"
+                                  AutomationProperties.Name="Parallel builds" />
+                    </Grid>
+
+                    <Grid Style="{StaticResource RowStyle}"
+                          ToolTip="Needed for GBA games. Building a GBA game downloads it once; if that fails, import a decrypted GBA Virtual Console CIA as donor.">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="GBA template" />
+                        <TextBlock Grid.Column="1"
+                                   Margin="0,0,12,0"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding GbaTemplateState}" />
+                        <Button Grid.Column="2"
+                                HorizontalAlignment="Left"
+                                Style="{StaticResource AutoNeutralButtonStyle}"
+                                Content="Import GBA Donor CIA"
+                                Command="{Binding ImportGbaDonorCommand}"
+                                ToolTip="Extract the GBA template from a decrypted GBA Virtual Console .cia, .cxi or .app" />
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Grid.ColumnSpan="2"
+                                   Style="{StaticResource MessageStyle}"
+                                   Text="{Binding GbaTemplateMessage}" />
+                    </Grid>
+
+                    <Grid Style="{StaticResource RowStyle}"
+                          ToolTip="Needed for GB and GBC games: Nintendo's Game Boy emulator from a Game Boy Color Virtual Console title you own. Dump it in GodMode9: Title manager, the game, Build CIA (standard). It also runs Game Boy games.">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="GB/GBC template" />
+                        <TextBlock Grid.Column="1"
+                                   Margin="0,0,12,0"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding GbTemplateState}" />
+                        <Button Grid.Column="2"
+                                HorizontalAlignment="Left"
+                                Style="{StaticResource AutoNeutralButtonStyle}"
+                                Content="Import GB/GBC Donor CIA"
+                                Command="{Binding ImportGbDonorCommand}"
+                                ToolTip="Extract the GB/GBC template from a decrypted Game Boy Color Virtual Console .cia, .cxi or .app" />
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Grid.ColumnSpan="2"
+                                   Style="{StaticResource MessageStyle}"
+                                   Text="{Binding GbTemplateMessage}" />
+                    </Grid>
+
+                    <Grid Style="{StaticResource RowStyle}"
+                          ToolTip="LaunchBox game and image lists used by Auto-Fill. Refresh downloads Metadata.zip (about 100 MB) and rebuilds the DS, GBA and GB/GBC indexes.">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="LaunchBox data" />
+                        <TextBlock Grid.Column="1"
+                                   Margin="0,0,12,0"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding LaunchBoxDataState}" />
+                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                            <Button Style="{StaticResource AutoNeutralButtonStyle}"
+                                    Content="Refresh LaunchBox Data"
+                                    Command="{Binding RefreshLaunchBoxCommand}"
+                                    ToolTip="Download the latest LaunchBox data and rebuild the DS, GBA and GB/GBC indexes" />
+                            <Button Style="{StaticResource NeutralButtonStyle}"
+                                    Content="Cancel"
+                                    Command="{Binding RefreshLaunchBoxCancelCommand}"
+                                    Visibility="{Binding RefreshLaunchBoxCommand.IsRunning, Converter={StaticResource VisibleWhenTrue}}"
+                                    ToolTip="Stop the LaunchBox refresh; the current data stays" />
+                        </StackPanel>
+                        <ProgressBar Grid.Row="1"
+                                     Grid.Column="1"
+                                     Grid.ColumnSpan="2"
+                                     Margin="0,8,0,0"
+                                     Maximum="1"
+                                     Value="{Binding LaunchBoxProgress, Mode=OneWay}"
+                                     IsIndeterminate="{Binding LaunchBoxProgressUnknown}"
+                                     Visibility="{Binding RefreshLaunchBoxCommand.IsRunning, Converter={StaticResource VisibleWhenTrue}}"
+                                     AutomationProperties.Name="LaunchBox refresh progress" />
+                        <TextBlock Grid.Row="2"
+                                   Grid.Column="1"
+                                   Grid.ColumnSpan="2"
+                                   Style="{StaticResource MessageStyle}"
+                                   Text="{Binding LaunchBoxStatus}" />
+                    </Grid>
+
+                    <Grid ToolTip="Title IDs given to every forwarder">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}" Text="Registry" />
+                        <TextBox Grid.Column="1"
+                                 IsReadOnly="True"
+                                 Text="{Binding RegistryPath, Mode=OneWay}"
+                                 AutomationProperties.Name="Registry file" />
+                        <Button Grid.Column="2"
+                                Margin="8,0,0,0"
+                                Style="{StaticResource AutoNeutralButtonStyle}"
+                                Content="Open folder"
+                                Command="{Binding OpenRegistryFolderCommand}"
+                                ToolTip="Show the registry file in Explorer" />
+                    </Grid>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </ScrollViewer>
+</UserControl>

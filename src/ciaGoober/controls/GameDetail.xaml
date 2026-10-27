@@ -1,0 +1,546 @@
+<UserControl x:Class="CiaGoober.Controls.GameDetail"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:core="clr-namespace:CiaGoober.Core;assembly=ciaGooberCore"
+             xmlns:vm="clr-namespace:CiaGoober.ViewModels"
+             xmlns:win="clr-namespace:CiaGoober.Windows"
+             UseLayoutRounding="True">
+    <!-- DataContext = MainViewModel.SelectedGame (a GameViewModel), null when nothing is selected. -->
+    <UserControl.Resources>
+        <Style x:Key="LabelStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="Margin" Value="0,6,12,0" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+        </Style>
+        <Style x:Key="RowStyle" TargetType="{x:Type FrameworkElement}">
+            <Setter Property="Margin" Value="0,0,0,14" />
+        </Style>
+        <Style x:Key="LastRowStyle" TargetType="{x:Type FrameworkElement}">
+            <Setter Property="Margin" Value="0" />
+        </Style>
+        <Style x:Key="NoteStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{StaticResource MetadataTextBrush}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style x:Key="HeaderIconButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource IconButtonStyle}">
+            <Setter Property="Width" Value="{StaticResource ControlMinHeight}" />
+            <Setter Property="Height" Value="{StaticResource ControlMinHeight}" />
+        </Style>
+        <Style x:Key="ComboStyle" TargetType="{x:Type ComboBox}" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="Width" Value="200" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="SelectedValuePath" Value="Value" />
+            <Setter Property="ItemTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Label}" />
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Border VerticalAlignment="Top">
+            <Border.Style>
+                <Style TargetType="{x:Type Border}" BasedOn="{StaticResource ContentPanelStyle}">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <TextBlock Foreground="{StaticResource MutedTextBrush}" Text="No game selected" />
+        </Border>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ScrollViewer.Style>
+                <Style TargetType="{x:Type ScrollViewer}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ScrollViewer.Style>
+            <StackPanel>
+                <!-- Header and artwork -->
+                <Border Style="{StaticResource ContentPanelStyle}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="130" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.ColumnSpan="2" Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock FontSize="16"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding DisplayName}"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding RomPath}" />
+                                <TextBlock Margin="0,2,0,0"
+                                           Foreground="{StaticResource MetadataTextBrush}"
+                                           ToolTip="System and game code">
+                                    <Run Text="{Binding SystemLabel, Mode=OneWay}" /><Run Text=" &#183; " /><Run Text="{Binding GameCode, Mode=OneWay}" />
+                                </TextBlock>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1"
+                                        Margin="12,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Orientation="Horizontal">
+                                <Button Command="{Binding DataContext.BuildCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}"
+                                        ToolTip="Build this game's CIA">
+                                    <StackPanel Orientation="Horizontal">
+                                        <md:PackIcon Style="{StaticResource ButtonIconStyle}" Kind="Hammer" />
+                                        <TextBlock Text="Build" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource ActionButtonStyle}"
+                                        Command="{Binding RunAutoFillCommand}"
+                                        ToolTip="Set the banner and HOME Menu icon from the matching LaunchBox game, replacing the current ones">
+                                    <StackPanel Orientation="Horizontal">
+                                        <md:PackIcon Style="{StaticResource ButtonIconStyle}" Kind="AutoFix" />
+                                        <TextBlock Text="Auto-Fill" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource HeaderIconButtonStyle}"
+                                        Command="{Binding OpenOutputCommand}"
+                                        ToolTip="Show the built CIA in File Explorer"
+                                        ToolTipService.ShowOnDisabled="True"
+                                        AutomationProperties.Name="Show the built CIA in File Explorer">
+                                    <md:PackIcon Kind="FolderOpenOutline" Width="18" Height="18" />
+                                </Button>
+                                <Button Margin="4,0,0,0"
+                                        Style="{StaticResource HeaderIconButtonStyle}"
+                                        Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}"
+                                        ToolTip="Remove this game from the list"
+                                        AutomationProperties.Name="Remove this game from the list">
+                                    <md:PackIcon Kind="Delete" Width="18" Height="18" />
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Build and Auto-Fill outcome -->
+                        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="0,0,0,10">
+                            <TextBlock Text="{Binding StatusText}">
+                                <TextBlock.Style>
+                                    <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource MessageStyle}">
+                                        <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Status}" Value="Failed">
+                                                <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status}" Value="Built">
+                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <!-- Read-only TextBox so the error can be selected and copied. -->
+                            <TextBox Margin="0,4,0,0"
+                                     MaxHeight="160"
+                                     IsReadOnly="True"
+                                     IsReadOnlyCaretVisible="True"
+                                     TextWrapping="Wrap"
+                                     VerticalContentAlignment="Top"
+                                     VerticalScrollBarVisibility="Auto"
+                                     Padding="6,4"
+                                     Foreground="{StaticResource ErrorBrush}"
+                                     Text="{Binding Error, Mode=OneWay}"
+                                     AutomationProperties.Name="Build error">
+                                <TextBox.Style>
+                                    <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource {x:Type TextBox}}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Error}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                            <TextBlock Style="{StaticResource MessageStyle}" Text="{Binding AutoFillText}" />
+                        </StackPanel>
+
+                        <!-- Banner -->
+                        <TextBlock Grid.Row="2"
+                                   Style="{StaticResource LabelStyle}"
+                                   Text="Banner"
+                                   ToolTip="Shown on the top screen when this game is selected in the HOME Menu (256x128)" />
+                        <StackPanel Grid.Row="2" Grid.Column="1" Style="{StaticResource RowStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="258"
+                                        Height="130"
+                                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                                        BorderThickness="1"
+                                        Background="{StaticResource ControlAltBrush}">
+                                    <Border.InputBindings>
+                                        <MouseBinding Gesture="LeftClick"
+                                                      Command="{Binding CropCommand}"
+                                                      CommandParameter="{x:Static win:CropTarget.Banner}" />
+                                    </Border.InputBindings>
+                                    <Border.Style>
+                                        <Style TargetType="{x:Type Border}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsEnabled, ElementName=CropBannerButton}" Value="True">
+                                                    <Setter Property="Cursor" Value="Hand" />
+                                                    <Setter Property="ToolTip" Value="Click to crop the banner" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Image Source="{Binding BannerPreview}"
+                                           Width="256"
+                                           Height="128"
+                                           AutomationProperties.Name="Banner preview" />
+                                </Border>
+                                <StackPanel Margin="8,0,0,0" VerticalAlignment="Top">
+                                    <Button Style="{StaticResource IconButtonStyle}"
+                                            Command="{Binding OpenLaunchBoxCommand}"
+                                            CommandParameter="{x:Static win:CropTarget.Banner}"
+                                            ToolTip="Choose a banner from this game's LaunchBox images"
+                                            AutomationProperties.Name="Choose a banner from LaunchBox">
+                                        <md:PackIcon Kind="ImageSearch" />
+                                    </Button>
+                                    <Button Margin="0,4,0,0"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Command="{Binding ChooseBannerCommand}"
+                                            ToolTip="Choose a banner image file"
+                                            AutomationProperties.Name="Choose a banner image file">
+                                        <md:PackIcon Kind="FolderOpen" />
+                                    </Button>
+                                    <Button x:Name="CropBannerButton"
+                                            Margin="0,4,0,0"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Command="{Binding CropCommand}"
+                                            CommandParameter="{x:Static win:CropTarget.Banner}"
+                                            ToolTip="Crop the banner image"
+                                            AutomationProperties.Name="Crop the banner image">
+                                        <md:PackIcon Kind="Crop" />
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                            <TextBlock Margin="0,4,0,0"
+                                       Style="{StaticResource NoteStyle}"
+                                       Text="{Binding BannerSourceText}"
+                                       ToolTip="{Binding Banner.Source}" />
+                            <TextBlock Style="{StaticResource ErrorMessageStyle}" Text="{Binding BannerPreviewError}" />
+                        </StackPanel>
+
+                        <!-- Icon -->
+                        <TextBlock Grid.Row="3"
+                                   Style="{StaticResource LabelStyle}"
+                                   Text="Icon"
+                                   ToolTip="Small 48x48 picture on the HOME Menu grid" />
+                        <StackPanel Grid.Row="3" Grid.Column="1" Style="{StaticResource RowStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="50"
+                                        Height="50"
+                                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                                        BorderThickness="1"
+                                        Background="{StaticResource ControlAltBrush}">
+                                    <Border.InputBindings>
+                                        <MouseBinding Gesture="LeftClick"
+                                                      Command="{Binding CropCommand}"
+                                                      CommandParameter="{x:Static win:CropTarget.Icon}" />
+                                    </Border.InputBindings>
+                                    <Border.Style>
+                                        <Style TargetType="{x:Type Border}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsEnabled, ElementName=CropIconButton}" Value="True">
+                                                    <Setter Property="Cursor" Value="Hand" />
+                                                    <Setter Property="ToolTip" Value="Click to crop the HOME Menu icon" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Image Source="{Binding IconPreview}"
+                                           Width="48"
+                                           Height="48"
+                                           AutomationProperties.Name="Icon preview" />
+                                </Border>
+                                <Button Margin="8,0,0,0"
+                                        VerticalAlignment="Top"
+                                        Style="{StaticResource IconButtonStyle}"
+                                        Command="{Binding OpenLaunchBoxCommand}"
+                                        CommandParameter="{x:Static win:CropTarget.Icon}"
+                                        ToolTip="Choose a HOME Menu icon from this game's LaunchBox images"
+                                        AutomationProperties.Name="Choose a HOME Menu icon from LaunchBox">
+                                    <md:PackIcon Kind="ImageSearch" />
+                                </Button>
+                                <Button Margin="4,0,0,0"
+                                        VerticalAlignment="Top"
+                                        Style="{StaticResource IconButtonStyle}"
+                                        Command="{Binding ChooseIconCommand}"
+                                        ToolTip="Choose a HOME Menu icon image file"
+                                        AutomationProperties.Name="Choose a HOME Menu icon image file">
+                                    <md:PackIcon Kind="FolderOpen" />
+                                </Button>
+                                <Button Margin="4,0,0,0"
+                                        VerticalAlignment="Top"
+                                        Style="{StaticResource IconButtonStyle}"
+                                        Command="{Binding UseDsIconCommand}"
+                                        Visibility="{Binding IsDs, Converter={StaticResource VisibleWhenTrue}}"
+                                        ToolTip="Use the icon stored in the .nds file instead of a custom icon"
+                                        AutomationProperties.Name="Use the game's DS icon">
+                                    <md:PackIcon Kind="Gamepad" />
+                                </Button>
+                                <Button x:Name="CropIconButton"
+                                        Margin="4,0,0,0"
+                                        VerticalAlignment="Top"
+                                        Style="{StaticResource IconButtonStyle}"
+                                        Command="{Binding CropCommand}"
+                                        CommandParameter="{x:Static win:CropTarget.Icon}"
+                                        ToolTip="Crop the HOME Menu icon image"
+                                        AutomationProperties.Name="Crop the HOME Menu icon image">
+                                    <md:PackIcon Kind="Crop" />
+                                </Button>
+                            </StackPanel>
+                            <TextBlock Margin="0,4,0,0"
+                                       Style="{StaticResource NoteStyle}"
+                                       Text="{Binding IconSourceText}"
+                                       ToolTip="{Binding Icon.Source}" />
+                            <TextBlock Style="{StaticResource ErrorMessageStyle}" Text="{Binding IconPreviewError}" />
+                        </StackPanel>
+
+                        <!-- Icon background -->
+                        <TextBlock Grid.Row="4"
+                                   Style="{StaticResource LabelStyle}"
+                                   Text="Icon background"
+                                   ToolTip="Fills transparent parts of the HOME Menu icon; 3DS icons have no transparency" />
+                        <StackPanel Grid.Row="4"
+                                    Grid.Column="1"
+                                    Style="{StaticResource RowStyle}"
+                                    Orientation="Horizontal">
+                            <ListBox VerticalAlignment="Center"
+                                     ItemsSource="{x:Static vm:GameViewModel.IconSwatches}"
+                                     SelectedValuePath="Color"
+                                     SelectedValue="{Binding EffectiveIconBackground}"
+                                     AutomationProperties.Name="Icon background swatches">
+                                <ListBox.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ListBox.ItemsPanel>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Width="20"
+                                                Height="20"
+                                                Background="{Binding Color}"
+                                                BorderBrush="{StaticResource BorderStrongBrush}"
+                                                BorderThickness="1"
+                                                ToolTip="{Binding Name}"
+                                                AutomationProperties.Name="{Binding Name}" />
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <TextBox Width="90"
+                                     Margin="8,0,0,0"
+                                     VerticalAlignment="Center"
+                                     FontFamily="Consolas"
+                                     MaxLength="7"
+                                     Text="{Binding EffectiveIconBackground, ValidatesOnExceptions=True}"
+                                     AutomationProperties.Name="Icon background color as #RRGGBB">
+                                <Validation.ErrorTemplate>
+                                    <ControlTemplate>
+                                        <Border BorderBrush="{StaticResource ErrorBrush}" BorderThickness="1">
+                                            <AdornedElementPlaceholder />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Validation.ErrorTemplate>
+                                <TextBox.Style>
+                                    <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource {x:Type TextBox}}">
+                                        <Setter Property="ToolTip" Value="Icon background as #RRGGBB" />
+                                        <Style.Triggers>
+                                            <Trigger Property="Validation.HasError" Value="True">
+                                                <Setter Property="ToolTip"
+                                                        Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={RelativeSource Self}}" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                        </StackPanel>
+
+                        <!-- Banner sound -->
+                        <TextBlock Grid.Row="5"
+                                   Style="{StaticResource LabelStyle}"
+                                   Text="Banner sound"
+                                   ToolTip="Plays when the banner shows (WAV or OGG)" />
+                        <StackPanel Grid.Row="5"
+                                    Grid.Column="1"
+                                    Style="{StaticResource LastRowStyle}"
+                                    Orientation="Horizontal">
+                            <Button Style="{StaticResource IconButtonStyle}"
+                                    Command="{Binding ChooseSoundCommand}"
+                                    ToolTip="Choose a banner sound file (WAV or OGG)"
+                                    AutomationProperties.Name="Choose a banner sound file">
+                                <md:PackIcon Kind="FolderOpen" />
+                            </Button>
+                            <Button Margin="4,0,8,0"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    Command="{Binding ResetSoundCommand}"
+                                    ToolTip="Use the default banner sound"
+                                    AutomationProperties.Name="Use the default banner sound">
+                                <md:PackIcon Kind="Restore" />
+                            </Button>
+                            <TextBlock Style="{StaticResource NoteStyle}"
+                                       Text="{Binding SoundText}"
+                                       ToolTip="{Binding SoundPath}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Title and ROM -->
+                <Border Margin="0,12,0,0" Style="{StaticResource ContentPanelStyle}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="130" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Style="{StaticResource LabelStyle}"
+                                   Text="Title"
+                                   ToolTip="HOME Menu title: short name, long name, publisher" />
+                        <Grid Grid.Column="1" Style="{StaticResource RowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" MaxWidth="420" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBox MaxLength="64"
+                                         Text="{Binding TitleShort, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="Short title, up to 64 characters"
+                                         AutomationProperties.Name="Short title" />
+                                <TextBox Margin="0,4,0,0"
+                                         MaxLength="128"
+                                         Text="{Binding TitleLong, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="Long title, up to 128 characters"
+                                         AutomationProperties.Name="Long title" />
+                                <TextBox Margin="0,4,0,0"
+                                         MaxLength="64"
+                                         Text="{Binding TitlePublisher, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="Publisher, up to 64 characters"
+                                         AutomationProperties.Name="Publisher" />
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Margin="4,0,0,0"
+                                    VerticalAlignment="Top"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    Command="{Binding ResetTitleCommand}"
+                                    ToolTip="Reset the title to the ROM's own title"
+                                    AutomationProperties.Name="Reset the title to the ROM's own title">
+                                <md:PackIcon Kind="Restore" />
+                            </Button>
+                        </Grid>
+
+                        <TextBlock Grid.Row="1"
+                                   Style="{StaticResource LabelStyle}"
+                                   Text="ROM"
+                                   ToolTip="DS ROMs must be copied to the SD path with the same file name; GBA and Game Boy ROMs are built into the CIA" />
+                        <StackPanel Grid.Row="1" Grid.Column="1">
+                            <TextBox IsReadOnly="True"
+                                     Text="{Binding RomPath, Mode=OneWay}"
+                                     ToolTip="ROM file on this PC"
+                                     AutomationProperties.Name="ROM file on this PC" />
+                            <StackPanel Visibility="{Binding IsDs, Converter={StaticResource VisibleWhenTrue}}">
+                                <TextBox Margin="0,4,0,0"
+                                         IsReadOnly="True"
+                                         FontFamily="Consolas"
+                                         Text="{Binding ResolvedSdPath, Mode=OneWay}"
+                                         ToolTip="Path the forwarder opens on the SD card"
+                                         AutomationProperties.Name="Path the forwarder opens on the SD card">
+                                    <TextBox.Style>
+                                        <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource {x:Type TextBox}}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ResolvedSdPath}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                                <TextBlock Style="{StaticResource ErrorMessageStyle}" Text="{Binding SdPathError}" />
+                                <TextBox Margin="0,4,0,0"
+                                         FontFamily="Consolas"
+                                         Text="{Binding CustomSdPath, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="SD path override for this game, as sd:/folder/game.nds; leave empty to use Settings"
+                                         AutomationProperties.Name="SD path override" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- GBA options -->
+                <Border Margin="0,12,0,0"
+                        Style="{StaticResource ContentPanelStyle}"
+                        Visibility="{Binding IsGba, Converter={StaticResource VisibleWhenTrue}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="130" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Style="{StaticResource LabelStyle}"
+                                   Text="Save type"
+                                   ToolTip="Save chip the game uses. Auto reads it from the ROM. Changing it on a rebuilt game discards that game's existing save." />
+                        <ComboBox Grid.Column="1"
+                                  Margin="0,0,0,10"
+                                  Style="{StaticResource ComboStyle}"
+                                  ItemsSource="{x:Static core:GbaChoices.SaveTypes}"
+                                  SelectedValue="{Binding SaveType}"
+                                  AutomationProperties.Name="Save type" />
+                        <TextBlock Grid.Row="1"
+                                   Style="{StaticResource LabelStyle}"
+                                   Text="Screen"
+                                   ToolTip="Original VC = Nintendo's 70% brightness filter; Color Corrected = gamma fix for the washed-out 3DS screen" />
+                        <ComboBox Grid.Row="1"
+                                  Grid.Column="1"
+                                  Margin="0,0,0,10"
+                                  Style="{StaticResource ComboStyle}"
+                                  ItemsSource="{x:Static core:GbaChoices.Screens}"
+                                  SelectedValue="{Binding Screen}"
+                                  AutomationProperties.Name="Screen" />
+                        <TextBlock Grid.Row="2"
+                                   Style="{StaticResource LabelStyle}"
+                                   Text="LCD ghosting"
+                                   ToolTip="Smearing of fast sprites on the original Game Boy Advance LCD; Off disables it" />
+                        <ComboBox Grid.Row="2"
+                                  Grid.Column="1"
+                                  Style="{StaticResource ComboStyle}"
+                                  ItemsSource="{x:Static core:GbaChoices.Ghosting}"
+                                  SelectedValue="{Binding Ghosting}"
+                                  AutomationProperties.Name="LCD ghosting" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

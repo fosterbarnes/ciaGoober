@@ -1,0 +1,39 @@
+<Window x:Class="CiaGoober.Windows.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:tabs="clr-namespace:CiaGoober.Tabs"
+        Title="ciaGoober"
+        Width="1080"
+        Height="825"
+        MinWidth="1080"
+        MinHeight="620"
+        WindowStartupLocation="Manual"
+        Background="{StaticResource AppBackgroundBrush}"
+        Foreground="{StaticResource PrimaryTextBrush}"
+        AllowDrop="True"
+        PreviewDragOver="Window_PreviewDragOver"
+        PreviewDrop="Window_PreviewDrop"
+        Loaded="MainWindow_Loaded"
+        Closing="Window_Closing">
+    <!-- DataContext = MainViewModel. Each tab's page lives in tabs\; TabBar switches them. -->
+    <Grid Margin="{StaticResource PageMargin}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <TabControl x:Name="PageTabs" Grid.Row="0">
+            <TabItem Header="DS" Tag="DS" />
+            <TabItem Header="GBA" Tag="GBA" />
+            <TabItem Header="GB/GBC" Tag="GB" />
+            <TabItem Header="Settings" Tag="Settings" />
+            <TabItem Header="About" Tag="About" />
+        </TabControl>
+        <Grid Grid.Row="1">
+            <tabs:GamesTab x:Name="DsTab" Opacity="0" Visibility="Collapsed" DataContext="{Binding Ds}" />
+            <tabs:GamesTab x:Name="GbaTab" Opacity="0" Visibility="Collapsed" DataContext="{Binding Gba}" />
+            <tabs:GamesTab x:Name="GbTab" Opacity="0" Visibility="Collapsed" DataContext="{Binding Gb}" />
+            <tabs:SettingsTab x:Name="SettingsTab" Opacity="0" Visibility="Collapsed" DataContext="{Binding Settings}" />
+            <tabs:AboutTab x:Name="AboutTab" Opacity="0" Visibility="Collapsed" />
+        </Grid>
+    </Grid>
+</Window>

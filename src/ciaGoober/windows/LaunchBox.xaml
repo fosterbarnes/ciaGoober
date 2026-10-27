@@ -1,0 +1,386 @@
+<Window x:Class="CiaGoober.Windows.LaunchBoxWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:vm="clr-namespace:CiaGoober.ViewModels"
+        xmlns:win="clr-namespace:CiaGoober.Windows"
+        Width="1120"
+        Height="780"
+        MinWidth="900"
+        MinHeight="600"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        UseLayoutRounding="True"
+        Background="{StaticResource AppBackgroundBrush}"
+        Foreground="{StaticResource PrimaryTextBrush}"
+        Loaded="Window_Loaded"
+        Closed="Window_Closed"
+        KeyDown="Window_KeyDown">
+    <!-- DataContext = LaunchBoxViewModel. -->
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="VisibleWhen" />
+        <!-- Collapses when empty, so a missing state takes no space. -->
+        <Style x:Key="StateTextStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Style.Triggers>
+                <Trigger Property="Text" Value="">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </Trigger>
+                <Trigger Property="Text" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ErrorTextStyle" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource StateTextStyle}">
+            <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+        </Style>
+        <Style x:Key="HeadingStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="Margin" Value="0,0,0,6" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+        </Style>
+        <Style x:Key="PreviewFrameStyle" TargetType="{x:Type Border}">
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSubtleBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="{StaticResource ControlAltBrush}" />
+        </Style>
+        <!-- Neutral until it is the selected tile's shape default, which Enter and double-click apply. -->
+        <Style x:Key="ChoiceButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Margin" Value="0,0,0,6" />
+            <Setter Property="Background" Value="{StaticResource ControlAltBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderStrongBrush}" />
+        </Style>
+        <Style x:Key="BannerChoiceButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource ChoiceButtonStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding SelectedTile.ShapeTarget}" Value="{x:Static win:CropTarget.Banner}">
+                    <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                    <Setter Property="BorderBrush" Value="{StaticResource AccentBorderBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="IconChoiceButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource ChoiceButtonStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding SelectedTile.ShapeTarget}" Value="{x:Static win:CropTarget.Icon}">
+                    <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                    <Setter Property="BorderBrush" Value="{StaticResource AccentBorderBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <ItemsPanelTemplate x:Key="WrapPanelTemplate">
+            <WrapPanel />
+        </ItemsPanelTemplate>
+    </Window.Resources>
+
+    <Grid Margin="{StaticResource PageMargin}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Game -->
+        <DockPanel Grid.ColumnSpan="2" Margin="0,0,0,10">
+            <Button DockPanel.Dock="Right"
+                    Margin="0"
+                    Style="{StaticResource NeutralButtonStyle}"
+                    Width="Auto"
+                    Command="{Binding OpenOnLaunchBoxCommand}"
+                    ToolTip="Search for this game on the LaunchBox Games Database website in the default browser">
+                <StackPanel Orientation="Horizontal">
+                    <md:PackIcon Kind="OpenInNew" Margin="0,0,6,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Open on LaunchBox" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock FontSize="16"
+                           Text="{Binding CurrentGame.Name}"
+                           TextTrimming="CharacterEllipsis"
+                           ToolTip="LaunchBox game whose images are shown" />
+                <TextBlock Margin="8,0,0,0"
+                           VerticalAlignment="Bottom"
+                           Foreground="{StaticResource MetadataTextBrush}"
+                           Text="{Binding CurrentGame.Year}"
+                           ToolTip="Release year" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Search -->
+        <DockPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="0,0,0,8">
+            <TextBlock Margin="{StaticResource ControlMargin}"
+                       VerticalAlignment="Center"
+                       Foreground="{StaticResource SecondaryTextBrush}"
+                       Text="Search" />
+            <TextBox x:Name="SearchBox"
+                     Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}"
+                     IsEnabled="{Binding IsIndexed}"
+                     ToolTip="Search LaunchBox games by name; Down moves to the results"
+                     AutomationProperties.Name="Search LaunchBox games"
+                     PreviewKeyDown="SearchBox_PreviewKeyDown" />
+        </DockPanel>
+        <ListBox x:Name="ResultList"
+                 Grid.Row="2"
+                 Grid.ColumnSpan="2"
+                 MaxHeight="200"
+                 Margin="0,0,0,8"
+                 ItemsSource="{Binding Results}"
+                 Visibility="{Binding HasResults, Converter={StaticResource VisibleWhen}}"
+                 AutomationProperties.Name="LaunchBox games"
+                 PreviewKeyDown="ResultList_PreviewKeyDown">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                    <Setter Property="ToolTip" Value="Show this game's images (click or Enter)" />
+                    <Setter Property="AutomationProperties.Name" Value="{Binding Name}" />
+                    <EventSetter Event="PreviewMouseLeftButtonUp" Handler="Result_PreviewMouseLeftButtonUp" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <TextBlock Width="48"
+                                       Foreground="{StaticResource MetadataTextBrush}"
+                                       Text="{Binding Year}" />
+                            <md:PackIcon Kind="ImageMultiple"
+                                         Margin="0,0,4,0"
+                                         VerticalAlignment="Center"
+                                         Foreground="{StaticResource MetadataTextBrush}" />
+                            <TextBlock MinWidth="28"
+                                       Foreground="{StaticResource MetadataTextBrush}"
+                                       Text="{Binding Images.Count}"
+                                       ToolTip="Image count" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                    </DockPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <TextBlock Grid.Row="3"
+                   Grid.ColumnSpan="2"
+                   Style="{StaticResource StateTextStyle}"
+                   Text="{Binding StateText}" />
+
+        <!-- Images -->
+        <DockPanel Grid.Row="4" Margin="0,0,12,0">
+            <ListBox x:Name="TabList"
+                     DockPanel.Dock="Top"
+                     Margin="0,0,0,8"
+                     ItemsSource="{Binding Tabs}"
+                     SelectedItem="{Binding SelectedTab}"
+                     ItemsPanel="{StaticResource WrapPanelTemplate}"
+                     AutomationProperties.Name="Image types">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                        <Setter Property="Padding" Value="10,4" />
+                        <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Label}" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <StackPanel DockPanel.Dock="Top"
+                        Margin="0,0,0,8"
+                        Orientation="Horizontal"
+                        Visibility="{Binding HasRegions, Converter={StaticResource VisibleWhen}}">
+                <TextBlock Margin="{StaticResource ControlMargin}"
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource SecondaryTextBrush}"
+                           Text="Region" />
+                <ComboBox Width="200"
+                          ItemsSource="{Binding Regions}"
+                          SelectedItem="{Binding SelectedRegion}"
+                          ToolTip="Show only this tab's images from one region"
+                          AutomationProperties.Name="Region" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                <TextBlock Margin="0,0,0,4"
+                           Style="{StaticResource StateTextStyle}"
+                           Text="{Binding ThumbnailText}" />
+                <ProgressBar Maximum="{Binding ThumbnailsTotal}"
+                             Value="{Binding ThumbnailsDone}"
+                             Visibility="{Binding IsFetchingThumbnails, Converter={StaticResource VisibleWhen}}"
+                             AutomationProperties.Name="Thumbnail progress" />
+            </StackPanel>
+            <ListBox x:Name="TileList"
+                     ItemsSource="{Binding VisibleTiles}"
+                     SelectedItem="{Binding SelectedTile}"
+                     ItemsPanel="{StaticResource WrapPanelTemplate}"
+                     AutomationProperties.Name="Images"
+                     PreviewKeyDown="TileList_PreviewKeyDown">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                        <Setter Property="Margin" Value="0,0,6,6" />
+                        <Setter Property="Padding" Value="4" />
+                        <Setter Property="ToolTip" Value="{Binding Description}" />
+                        <Setter Property="AutomationProperties.Name" Value="{Binding Description}" />
+                        <EventSetter Event="MouseDoubleClick" Handler="Tile_MouseDoubleClick" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:LaunchBoxTile}">
+                        <Grid Width="120" Height="120" Background="{StaticResource SurfaceLoweredBrush}">
+                            <Image Source="{Binding Thumbnail}"
+                                   Stretch="Uniform"
+                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                            <md:PackIcon Width="32"
+                                         Height="32"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"
+                                         Kind="ImageOutline"
+                                         Foreground="{StaticResource MutedTextBrush}">
+                                <md:PackIcon.Style>
+                                    <Style TargetType="{x:Type md:PackIcon}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Thumbnail}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Failed}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </md:PackIcon.Style>
+                            </md:PackIcon>
+                            <md:PackIcon Width="32"
+                                         Height="32"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"
+                                         Kind="ImageBrokenVariant"
+                                         Foreground="{StaticResource ErrorBrush}"
+                                         Visibility="{Binding Failed, Converter={StaticResource VisibleWhen}}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </DockPanel>
+
+        <!-- Previews and actions -->
+        <Border Grid.Row="4" Grid.Column="1" Width="300" Style="{StaticResource ContentPanelStyle}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource HeadingStyle}"
+                               Text="Current"
+                               ToolTip="The card's banner and HOME Menu icon as they will be built" />
+                    <Border Width="258" Height="130" Style="{StaticResource PreviewFrameStyle}">
+                        <Image Source="{Binding Game.BannerPreview}"
+                               Width="256"
+                               Height="128"
+                               AutomationProperties.Name="Current banner" />
+                    </Border>
+                    <Border Width="50" Height="50" Margin="0,6,0,14" Style="{StaticResource PreviewFrameStyle}">
+                        <Image Source="{Binding Game.IconPreview}"
+                               Width="48"
+                               Height="48"
+                               AutomationProperties.Name="Current HOME Menu icon" />
+                    </Border>
+
+                    <TextBlock Style="{StaticResource HeadingStyle}"
+                               Text="Selected"
+                               ToolTip="The selected image as a 256x128 banner and a 48x48 HOME Menu icon" />
+                    <TextBlock Style="{StaticResource StateTextStyle}" Text="{Binding SelectionText}" />
+                    <Border Width="258" Height="130" Style="{StaticResource PreviewFrameStyle}">
+                        <Image Source="{Binding SelectedBannerPreview}"
+                               Width="256"
+                               Height="128"
+                               AutomationProperties.Name="Selected image as banner" />
+                    </Border>
+                    <StackPanel Margin="0,6,0,8" Orientation="Horizontal">
+                        <Border Width="50" Height="50" Style="{StaticResource PreviewFrameStyle}">
+                            <Image Source="{Binding SelectedIconPreview}"
+                                   Width="48"
+                                   Height="48"
+                                   AutomationProperties.Name="Selected image as HOME Menu icon" />
+                        </Border>
+                        <ListBox Margin="6,0,0,0"
+                                 VerticalAlignment="Center"
+                                 ItemsSource="{x:Static vm:GameViewModel.IconSwatches}"
+                                 SelectedValuePath="Color"
+                                 SelectedValue="{Binding Game.EffectiveIconBackground}"
+                                 ToolTip="Icon background: fills transparent parts of the HOME Menu icon"
+                                 AutomationProperties.Name="Icon background swatches">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                    <Setter Property="Padding" Value="3" />
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Width="20"
+                                            Height="20"
+                                            Background="{Binding Color}"
+                                            BorderBrush="{StaticResource BorderStrongBrush}"
+                                            BorderThickness="1"
+                                            ToolTip="{Binding Name}"
+                                            AutomationProperties.Name="{Binding Name}" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <TextBox Width="80"
+                                 Margin="6,0,0,0"
+                                 VerticalAlignment="Center"
+                                 FontFamily="Consolas"
+                                 MaxLength="7"
+                                 Text="{Binding Game.EffectiveIconBackground, ValidatesOnExceptions=True}"
+                                 AutomationProperties.Name="Icon background color as #RRGGBB">
+                            <Validation.ErrorTemplate>
+                                <ControlTemplate>
+                                    <Border BorderBrush="{StaticResource ErrorBrush}" BorderThickness="1">
+                                        <AdornedElementPlaceholder />
+                                    </Border>
+                                </ControlTemplate>
+                            </Validation.ErrorTemplate>
+                            <TextBox.Style>
+                                <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource {x:Type TextBox}}">
+                                    <Setter Property="ToolTip" Value="Icon background as #RRGGBB" />
+                                    <Style.Triggers>
+                                        <Trigger Property="Validation.HasError" Value="True">
+                                            <Setter Property="ToolTip"
+                                                    Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={RelativeSource Self}}" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource StateTextStyle}" Text="{Binding SelectionStatus}" />
+                    <TextBlock Style="{StaticResource ErrorTextStyle}" Text="{Binding SelectionError}" />
+
+                    <Button Style="{StaticResource BannerChoiceButtonStyle}"
+                            Command="{Binding UseBannerCommand}"
+                            ToolTip="Set this image as the card's banner"
+                            Content="Use as Banner" />
+                    <Button Style="{StaticResource IconChoiceButtonStyle}"
+                            Command="{Binding UseIconCommand}"
+                            ToolTip="Set this image as the card's HOME Menu icon"
+                            Content="Use as HOME Menu Icon" />
+                    <Button Style="{StaticResource ChoiceButtonStyle}"
+                            Command="{Binding CropCommand}"
+                            CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                            ToolTip="Zoom in and choose the part to use as the banner or HOME Menu icon">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Crop" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Crop" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</Window>

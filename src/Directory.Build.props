@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Every project stamps its assembly with the repo version. -->
+    <VersionContents>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\.version\version').Trim())</VersionContents>
+    <Version>$(VersionContents)</Version>
+    <AssemblyVersion>$(VersionContents).0</AssemblyVersion>
+    <FileVersion>$(VersionContents).0</FileVersion>
+  </PropertyGroup>
+</Project>

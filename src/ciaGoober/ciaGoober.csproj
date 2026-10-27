@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>CiaGoober</RootNamespace>
+    <AssemblyName>ciaGoober</AssemblyName>
+    <ApplicationIcon>..\..\.res\icon\icon.ico</ApplicationIcon>
+    <Platforms>AnyCPU;x64</Platforms>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1" />
+    <PackageReference Include="MaterialDesignThemes" Version="4.9.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ciaGooberCore\ciaGooberCore.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="..\..\.res\icon\icon512.png" Link="Resources\icon512.png" />
+    <Content Include="..\..\.version\version" Link="Version" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+    <Content Include="..\..\.res\tools\*" Exclude="..\..\.res\tools\*.md" Link="tools\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+    <Content Include="..\..\.res\sd\*" Exclude="..\..\.res\sd\*.md" Link="sd\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+    <Content Include="..\..\.res\launchbox\*.json" Link="launchbox\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+  </ItemGroup>
+</Project>

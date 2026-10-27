@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>CiaGoober.Core</RootNamespace>
+    <AssemblyName>ciaGooberCore</AssemblyName>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="3.119.4" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="3.119.4" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ciaGooberTests" />
+  </ItemGroup>
+</Project>

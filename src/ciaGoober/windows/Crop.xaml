@@ -1,0 +1,163 @@
+<Window x:Class="CiaGoober.Windows.CropWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+        SizeToContent="WidthAndHeight"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        UseLayoutRounding="True"
+        Background="{StaticResource AppBackgroundBrush}"
+        Foreground="{StaticResource PrimaryTextBrush}">
+    <Window.Resources>
+        <!-- Transparency checker, the same scale as the 256x128 banner preview. -->
+        <DrawingBrush x:Key="CheckerBrush" TileMode="Tile" Viewport="0,0,16,16" ViewportUnits="Absolute">
+            <DrawingBrush.Drawing>
+                <DrawingGroup>
+                    <GeometryDrawing Brush="{StaticResource ControlAltBrush}">
+                        <GeometryDrawing.Geometry>
+                            <RectangleGeometry Rect="0,0,16,16" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <GeometryDrawing Brush="{StaticResource HoverBrush}">
+                        <GeometryDrawing.Geometry>
+                            <GeometryGroup>
+                                <RectangleGeometry Rect="0,0,8,8" />
+                                <RectangleGeometry Rect="8,8,8,8" />
+                            </GeometryGroup>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingGroup>
+            </DrawingBrush.Drawing>
+        </DrawingBrush>
+        <Style x:Key="EditorStyle" TargetType="{x:Type Border}">
+            <Setter Property="Background" Value="{StaticResource SurfaceLoweredBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderStrongBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="Focusable" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource FocusBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    <StackPanel Margin="{StaticResource ContentPanelPadding}">
+        <StackPanel x:Name="TargetPanel"
+                    Margin="{StaticResource SegmentStripMargin}"
+                    Orientation="Horizontal"
+                    Visibility="Collapsed">
+            <RadioButton x:Name="BannerTarget"
+                         GroupName="CropTarget"
+                         Content="Banner"
+                         ToolTip="Crop for the 256x128 HOME Menu banner (2:1 frame)"
+                         Checked="Target_Checked" />
+            <RadioButton x:Name="IconTarget"
+                         GroupName="CropTarget"
+                         Content="Icon"
+                         ToolTip="Crop for the 48x48 HOME Menu icon (square frame)"
+                         Checked="Target_Checked" />
+        </StackPanel>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Border x:Name="Editor"
+                    Style="{StaticResource EditorStyle}"
+                    Cursor="SizeAll"
+                    AutomationProperties.Name="Crop frame"
+                    ToolTip="Drag to move, wheel to zoom; arrow keys move, + and - zoom"
+                    MouseLeftButtonDown="Editor_MouseLeftButtonDown"
+                    MouseMove="Editor_MouseMove"
+                    MouseLeftButtonUp="Editor_MouseLeftButtonUp"
+                    LostMouseCapture="Editor_LostMouseCapture"
+                    MouseWheel="Editor_MouseWheel"
+                    KeyDown="Editor_KeyDown">
+                <Grid Width="512" Height="256">
+                    <Canvas x:Name="Frame"
+                            Height="256"
+                            HorizontalAlignment="Center"
+                            ClipToBounds="True">
+                        <Image x:Name="SourceImage"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
+                    </Canvas>
+                    <TextBlock x:Name="StateText"
+                               Margin="16"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource MetadataTextBrush}"
+                               Text="Loading image" />
+                </Grid>
+            </Border>
+            <StackPanel Grid.Column="1" Margin="16,0,0,0" Width="256">
+                <TextBlock x:Name="PreviewLabel"
+                           Foreground="{StaticResource SecondaryTextBrush}"
+                           ToolTip="The exact image the build writes for this crop" />
+                <Border x:Name="PreviewBorder"
+                        Margin="0,6,0,0"
+                        HorizontalAlignment="Left"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1">
+                    <Image x:Name="PreviewImage" />
+                </Border>
+                <TextBlock x:Name="PreviewError"
+                           Margin="0,6,0,0"
+                           TextWrapping="Wrap"
+                           Foreground="{StaticResource ErrorBrush}"
+                           Visibility="Collapsed" />
+            </StackPanel>
+        </Grid>
+        <Grid Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <md:PackIcon Kind="MagnifyMinusOutline"
+                         Margin="0,0,6,0"
+                         VerticalAlignment="Center"
+                         Foreground="{StaticResource SecondaryTextBrush}" />
+            <Slider x:Name="ZoomSlider"
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Minimum="0"
+                    Maximum="1"
+                    SmallChange="0.02"
+                    LargeChange="0.1"
+                    IsEnabled="False"
+                    AutomationProperties.Name="Zoom"
+                    ToolTip="Zoom around the frame center"
+                    ValueChanged="ZoomSlider_ValueChanged" />
+            <md:PackIcon Grid.Column="2"
+                         Kind="MagnifyPlusOutline"
+                         Margin="6,0,16,0"
+                         VerticalAlignment="Center"
+                         Foreground="{StaticResource SecondaryTextBrush}" />
+            <StackPanel Grid.Column="3" Orientation="Horizontal">
+                <Button x:Name="ResetButton"
+                        Style="{StaticResource NeutralButtonStyle}"
+                        Height="{StaticResource ControlMinHeight}"
+                        Content="Reset"
+                        IsEnabled="False"
+                        ToolTip="Return to the initial framing"
+                        Click="ResetButton_Click" />
+                <Button Style="{StaticResource NeutralButtonStyle}"
+                        Height="{StaticResource ControlMinHeight}"
+                        Content="Cancel"
+                        IsCancel="True"
+                        ToolTip="Close without changing the crop (Esc)" />
+                <Button x:Name="ApplyButton"
+                        Margin="0"
+                        Content="Apply"
+                        IsDefault="True"
+                        IsEnabled="False"
+                        ToolTip="Use this crop (Enter)"
+                        Click="ApplyButton_Click" />
+            </StackPanel>
+        </Grid>
+    </StackPanel>
+</Window>
