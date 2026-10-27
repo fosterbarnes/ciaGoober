@@ -10,6 +10,9 @@ $iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue)?.Source
 if (-not $iscc) { $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' }
 if (-not (Test-Path -LiteralPath $iscc)) { throw "Inno Setup compiler not found: $iscc" }
 ensureInstallerImages
+# Publish first so the installer never packages a missing or stale build.
+$buildParams = @{}; if ($Architecture) { $buildParams.Architecture = $Architecture }
+invokeScript 'build.ps1' $buildParams
 $isccDefines = @(
     "/DAppVersion=$versionContents"
     "/DAppPublisher=$appPublisher"

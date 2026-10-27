@@ -221,6 +221,18 @@ function runNativeCommand {
     if ($LASTEXITCODE) { throw "$Name failed (exit $LASTEXITCODE)." }
 }
 
+# Runs a sibling script in-process as part of a pipeline, so its closeOut does not count down or exit.
+function invokeScript {
+    param([Parameter(Mandatory)][string]$Name, [hashtable]$Params = @{})
+    $previousPipeline = $env:BASE_BUILD_PIPELINE
+    try {
+        $env:BASE_BUILD_PIPELINE = '1'
+        & "$PSScriptRoot\$Name" @Params
+    } finally {
+        $env:BASE_BUILD_PIPELINE = $previousPipeline
+    }
+}
+
 function writeClearedLine {
     param([Parameter(Mandatory)][string]$Text, [Parameter(Mandatory)][int]$PadWidth, [switch]$NoNewline)
     Write-Host "`r$Text$(' ' * [Math]::Max(0, $PadWidth - $Text.Length))" -NoNewline:$NoNewline
@@ -334,7 +346,6 @@ function buildAll {
         $env:BASE_BUILD_PIPELINE = '1'
         deleteDir $publishFolder
         $params = @{}; if ($Architecture) { $params.Architecture = $Architecture }
-        runNativeCommand -FilePath "$PSScriptRoot\build.ps1" -ArgumentList $params -Name 'build.ps1'
         runNativeCommand -FilePath "$PSScriptRoot\buildInstaller.ps1" -ArgumentList $params -Name 'buildInstaller.ps1'
         New-Item -ItemType Directory -Path $publishFolder -Force | Out-Null
         foreach ($target in (getBuildTargets $Architecture)) {
