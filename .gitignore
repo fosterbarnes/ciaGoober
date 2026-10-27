@@ -1,0 +1,10 @@
+bin/
+obj/
+publish/
+.installer/Output/
+.config/
+.version/versionBuild
+desktop.ini
+buildNotes.*
+*.user
+*.suo
